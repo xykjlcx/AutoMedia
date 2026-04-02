@@ -38,8 +38,10 @@ ${itemList}`,
     })
 
     const text = response.content[0].type === 'text' ? response.content[0].text : ''
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) continue
+    const firstBracket = text.indexOf('[')
+    const lastBracket = text.lastIndexOf(']')
+    if (firstBracket === -1 || lastBracket === -1 || lastBracket <= firstBracket) continue
+    const jsonMatch = [text.slice(firstBracket, lastBracket + 1)]
 
     try {
       const summaries: Array<{ index: number; one_liner: string; summary: string }> = JSON.parse(jsonMatch[0])

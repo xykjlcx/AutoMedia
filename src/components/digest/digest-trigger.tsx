@@ -114,13 +114,9 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
 
       {/* 进度信息 */}
       {isRunning && progress && (
-        <div className="animate-gentle-pulse text-center space-y-1">
-          {Object.entries(progress).map(([key, value]) => (
-            <p key={key} className="text-xs text-muted-foreground">
-              {value}
-            </p>
-          ))}
-        </div>
+        <p className="animate-gentle-pulse text-xs text-muted-foreground text-center">
+          {progress.detail || '处理中...'}
+        </p>
       )}
 
       {isRunning && !progress && (

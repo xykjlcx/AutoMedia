@@ -18,11 +18,9 @@ export default function HistoryPage() {
   useEffect(() => {
     async function fetchDates() {
       try {
-        // 用今天日期查 API，仅取 availableDates
-        const today = format(new Date(), "yyyy-MM-dd")
-        const res = await fetch(`/api/digest/${today}`)
+        const res = await fetch('/api/digest/dates')
         const data = await res.json()
-        setAvailableDates(data.availableDates || [])
+        setAvailableDates(data.dates || [])
       } catch {
         setAvailableDates([])
       } finally {

@@ -53,8 +53,11 @@ ${itemList}`,
     })
 
     const text = response.content[0].type === 'text' ? response.content[0].text : ''
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) continue
+    // 找第一个 [ 到最后一个 ] 之间的内容
+    const firstBracket = text.indexOf('[')
+    const lastBracket = text.lastIndexOf(']')
+    if (firstBracket === -1 || lastBracket === -1 || lastBracket <= firstBracket) continue
+    const jsonMatch = [text.slice(firstBracket, lastBracket + 1)]
 
     try {
       const scores: Array<{ index: number; relevance: number; novelty: number; impact: number }> = JSON.parse(jsonMatch[0])

@@ -10,13 +10,14 @@ export async function GET(
   const { date } = await params
   const items = await getDigestByDate(date)
 
-  // 查询收藏状态
+  // 查询收藏状态，同时返回 favoriteId
   const allFavorites = await db.select().from(favorites)
-  const favoritedIds = new Set(allFavorites.map(f => f.digestItemId))
+  const favoriteMap = new Map(allFavorites.map(f => [f.digestItemId, f.id]))
 
   const itemsWithFavorite = items.map(item => ({
     ...item,
-    isFavorited: favoritedIds.has(item.id),
+    isFavorited: favoriteMap.has(item.id),
+    favoriteId: favoriteMap.get(item.id) || null,
   }))
 
   // 按来源分组

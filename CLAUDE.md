@@ -4,7 +4,7 @@
 AI 驱动的每日资讯聚合工具。从多平台采集内容，经 AI 筛选、去重、摘要后以日报形式展示。
 
 ## 技术栈
-- Next.js 15 (App Router) + React 19 + TypeScript
+- Next.js 16 (App Router) + React 19 + TypeScript
 - Tailwind CSS 4 + shadcn/ui
 - SQLite + Drizzle ORM
 - Claude API (@anthropic-ai/sdk)

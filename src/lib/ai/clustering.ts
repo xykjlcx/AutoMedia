@@ -39,7 +39,12 @@ ${itemList}
   })
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  // 找第一个 { 到最后一个 } 之间的内容
+  const firstBrace = text.indexOf('{')
+  const lastBrace = text.lastIndexOf('}')
+  const jsonMatch = (firstBrace !== -1 && lastBrace > firstBrace)
+    ? [text.slice(firstBrace, lastBrace + 1)]
+    : null
 
   // 默认每条独立
   const result: ClusteredItem[] = items.map((item, i) => ({

@@ -1,6 +1,6 @@
 import { db } from './index'
 import { digestItems, digestRuns, favorites, rawItems } from './schema'
-import { eq, desc, and } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 
 // 获取指定日期的日报
 export async function getDigestByDate(date: string) {
