@@ -27,9 +27,9 @@ export interface PipelineProgress {
   // 采集阶段每个源的状态
   sources?: Record<string, SourceProgress>
   // AI 阶段的统计
-  scoring?: { total: number; done: number; filtered: number }
+  scoring?: { total: number; done: number; filtered: number; failed?: number }
   clustering?: { total: number; done: number }
-  summarizing?: { total: number; done: number }
+  summarizing?: { total: number; done: number; failed?: number }
   detail?: string
 }
 
@@ -152,16 +152,19 @@ export async function runDigestPipeline(date: string): Promise<string> {
     }).where(eq(digestRuns.id, runId))
     pipelineEvents.emitProgress({ runId, date, progress })
 
-    const scored = await scoreItems(allItems, async (done) => {
+    const scoreResult = await scoreItems(allItems, async (done) => {
       progress.scoring!.done = done
       progress.detail = `已评分 ${done}/${allItems.length} 条`
       await saveProgress(runId, progress, date)
     })
     // 不过滤，所有评分过的内容都保留，前端用 Tab 分类展示
+    const scored = scoreResult.items
     const recommendedCount = scored.filter(s => s.aiScore >= 5).length
     progress.scoring!.done = allItems.length
     progress.scoring!.filtered = recommendedCount
-    progress.detail = `评分完成，${recommendedCount} 条推荐`
+    progress.scoring!.failed = scoreResult.failedCount
+    const failNote = scoreResult.failedCount > 0 ? `（${scoreResult.failedCount} 条评分失败）` : ''
+    progress.detail = `评分完成，${recommendedCount} 条推荐${failNote}`
     await saveProgress(runId, progress, date)
 
     // ── Stage 2: 跨源去重 ──
@@ -181,12 +184,14 @@ export async function runDigestPipeline(date: string): Promise<string> {
     progress.detail = 'AI 摘要生成中...'
     await saveProgress(runId, progress, date)
 
-    const summarized = await summarizeItems(clustered, async (done) => {
+    const summarizeResult = await summarizeItems(clustered, async (done) => {
       progress.summarizing!.done = done
       progress.detail = `已生成 ${done}/${clustered.length} 条摘要`
       await saveProgress(runId, progress, date)
     })
+    const summarized = summarizeResult.items
     progress.summarizing!.done = clustered.length
+    progress.summarizing!.failed = summarizeResult.failedCount
     await saveProgress(runId, progress, date)
 
     // 写入精选数据（事务保证原子性）

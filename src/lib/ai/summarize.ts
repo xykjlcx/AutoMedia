@@ -8,12 +8,18 @@ export interface SummarizedItem extends ClusteredItem {
   summary: string
 }
 
+export interface SummarizeResult {
+  items: SummarizedItem[]
+  failedCount: number
+}
+
 // 批量生成摘要，每批 5 条
 export async function summarizeItems(
   items: ClusteredItem[],
   onProgress?: (done: number) => Promise<void> | void,
-): Promise<SummarizedItem[]> {
+): Promise<SummarizeResult> {
   const results: SummarizedItem[] = []
+  let failedCount = 0
   const batchSize = 5
 
   for (let i = 0; i < items.length; i += batchSize) {
@@ -41,6 +47,7 @@ ${itemList}`,
       const jsonStr = extractJson(text)
       if (!jsonStr) {
         // fallback
+        failedCount += batch.length
         for (const item of batch) {
           results.push({ ...item, oneLiner: item.title.slice(0, 30), summary: item.content.slice(0, 150) })
         }
@@ -59,6 +66,7 @@ ${itemList}`,
       }
     } catch (err) {
       console.error('[summarize] 摘要生成失败，使用 fallback:', err)
+      failedCount += batch.length
       for (const item of batch) {
         results.push({ ...item, oneLiner: item.title.slice(0, 30), summary: item.content.slice(0, 150) })
       }
@@ -67,5 +75,5 @@ ${itemList}`,
     await onProgress?.(Math.min(i + batchSize, items.length))
   }
 
-  return results
+  return { items: results, failedCount }
 }

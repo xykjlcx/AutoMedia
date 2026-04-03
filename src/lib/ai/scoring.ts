@@ -12,6 +12,11 @@ export interface ScoredItem extends CollectedItem {
   }
 }
 
+export interface ScoreResult {
+  items: ScoredItem[]
+  failedCount: number
+}
+
 const INTEREST_DOMAINS = [
   'AI / 大模型 / Agent / LLM',
   '跨境电商 / Shopify / 独立站 / DTC',
@@ -23,8 +28,9 @@ const INTEREST_DOMAINS = [
 export async function scoreItems(
   items: CollectedItem[],
   onProgress?: (done: number) => Promise<void> | void,
-): Promise<ScoredItem[]> {
+): Promise<ScoreResult> {
   const results: ScoredItem[] = []
+  let failedCount = 0
   const batchSize = 20
 
   for (let i = 0; i < items.length; i += batchSize) {
@@ -54,7 +60,11 @@ ${itemList}`,
       })
 
       const jsonStr = extractJson(text)
-      if (!jsonStr) { console.error('[scoring] 无法提取 JSON'); continue }
+      if (!jsonStr) {
+        console.error('[scoring] 无法提取 JSON')
+        failedCount += batch.length
+        continue
+      }
 
       const scores: Array<{ index: number; relevance: number; novelty: number; impact: number }> = JSON.parse(jsonStr)
       for (const score of scores) {
@@ -73,11 +83,12 @@ ${itemList}`,
       }
     } catch (err) {
       console.error('[scoring] 评分失败，跳过当前批次:', err)
+      failedCount += batch.length
     }
     // 报告进度：已处理到第几条
     await onProgress?.(Math.min(i + batchSize, items.length))
   }
 
-  return results
+  return { items: results, failedCount }
 }
 
