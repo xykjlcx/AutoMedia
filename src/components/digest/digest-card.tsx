@@ -5,6 +5,7 @@ import { ExternalLink, ChevronDown, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { FavoriteButton } from "@/components/favorites/favorite-button"
+import { RatingButtons } from "@/components/digest/rating-buttons"
 
 export interface DigestItem {
   id: string
@@ -22,6 +23,8 @@ export interface DigestItem {
   favoriteId?: string
   isRead?: boolean
   isRecommended?: boolean
+  userRating?: 'like' | 'dislike' | null
+  trendTag?: string | null
 }
 
 interface DigestCardProps {
@@ -75,11 +78,14 @@ export function DigestCard({ item, index = 0 }: DigestCardProps) {
               </span>
             )}
           </div>
-          <FavoriteButton
-            digestItemId={item.id}
-            isFavorited={item.isFavorited}
-            favoriteId={item.favoriteId}
-          />
+          <div className="flex items-center gap-1">
+            <RatingButtons digestItemId={item.id} initialRating={item.userRating} />
+            <FavoriteButton
+              digestItemId={item.id}
+              isFavorited={item.isFavorited}
+              favoriteId={item.favoriteId}
+            />
+          </div>
         </div>
 
         {/* 标题 */}
@@ -99,6 +105,15 @@ export function DigestCard({ item, index = 0 }: DigestCardProps) {
         <p className="text-sm text-muted-foreground leading-relaxed mb-2">
           {item.oneLiner}
         </p>
+
+        {/* 趋势标签 */}
+        {item.trendTag && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10 text-xs text-orange-600 dark:text-orange-400 font-medium">
+              🔥 {item.trendTag}
+            </span>
+          </div>
+        )}
 
         {/* 跨源讨论标签 */}
         {crossSourceLabel && (

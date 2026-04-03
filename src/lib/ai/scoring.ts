@@ -1,6 +1,7 @@
 import { generateText } from 'ai'
 import { getModels } from './client'
 import { extractJson } from './utils'
+import { getPreferenceProfile } from './preference'
 import type { CollectedItem } from '../collectors/types'
 
 export interface ScoredItem extends CollectedItem {
@@ -35,6 +36,12 @@ export async function scoreItems(
   const batchSize = 20
   const concurrency = 2
 
+  // 获取偏好画像（在循环外只调一次）
+  const preferenceProfile = getPreferenceProfile()
+  const preferenceSection = preferenceProfile
+    ? `\n用户个人偏好（请据此调整评分权重）：\n${preferenceProfile}\n`
+    : ''
+
   // 切分批次
   const batches: CollectedItem[][] = []
   for (let i = 0; i < items.length; i += batchSize) {
@@ -54,7 +61,7 @@ export async function scoreItems(
 
 关注领域：
 ${INTEREST_DOMAINS.map(d => `- ${d}`).join('\n')}
-
+${preferenceSection}
 评分维度（每项 0-10 分）：
 - relevance: 与关注领域的匹配度
 - novelty: 是否有新信息、新观点

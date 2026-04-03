@@ -7,8 +7,10 @@ import { rssCollector } from './collectors/rss'
 import { scoreItems } from './ai/scoring'
 import { clusterItems } from './ai/clustering'
 import { summarizeItems } from './ai/summarize'
+import { analyzeTrends } from './ai/trends'
 import type { CollectedItem } from './collectors/types'
 import { sendDigestNotification } from './notify'
+import { shouldUpdateProfile, updatePreferenceProfile } from './ai/preference'
 import { pipelineEvents } from './pipeline-events'
 
 // ── 进度结构定义 ──
@@ -237,12 +239,21 @@ export async function runDigestPipeline(date: string): Promise<string> {
     progress.summarizing!.failed = summarizeResult.failedCount
     await saveProgress(runId, progress, date)
 
+    // ── Stage 3.5: 趋势分析 ──
+    progress.detail = '趋势分析中...'
+    await saveProgress(runId, progress, date)
+
+    const trendMap = await analyzeTrends(
+      date,
+      summarized.map(item => ({ url: item.url, title: item.title, source: item.source }))
+    )
+
     // 增量写入新条目（不删除旧数据，保留收藏和已读状态）
     if (summarized.length > 0) {
       const writeNewDigest = db.$client.transaction(() => {
         const insertDigest = db.$client.prepare(`
-          INSERT INTO digest_items (id, digest_date, source, title, url, author, ai_score, one_liner, summary, cluster_id, cluster_sources, created_at, is_read)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+          INSERT INTO digest_items (id, digest_date, source, title, url, author, ai_score, one_liner, summary, cluster_id, cluster_sources, created_at, is_read, trend_tag)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
         `)
         const insertFts = db.$client.prepare(`
           INSERT INTO digest_fts (digest_item_id, title, one_liner, summary, source, digest_date)
@@ -255,7 +266,8 @@ export async function runDigestPipeline(date: string): Promise<string> {
           insertDigest.run(
             id, date, item.source, item.title, item.url, item.author || '',
             item.aiScore, item.oneLiner, item.summary,
-            item.clusterId || null, JSON.stringify(item.clusterSources || []), now
+            item.clusterId || null, JSON.stringify(item.clusterSources || []), now,
+            trendMap.get(item.url) || null
           )
           insertFts.run(id, item.title, item.oneLiner, item.summary, item.source, date)
         }
@@ -286,6 +298,13 @@ export async function runDigestPipeline(date: string): Promise<string> {
       errors: Object.keys(errors).length > 0 ? errors : null,
     }).where(eq(digestRuns.id, runId))
     pipelineEvents.emitProgress({ runId, date, progress: completedProgress })
+
+    // 异步更新偏好画像（不阻塞完成流程）
+    if (shouldUpdateProfile()) {
+      updatePreferenceProfile().catch(err =>
+        console.error('[pipeline] 偏好画像更新失败:', err)
+      )
+    }
 
     // 发送通知
     sendDigestNotification(date, summarized.length).catch(err =>
