@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Newspaper, Clock, Star, Settings } from "lucide-react"
+import { Newspaper, Clock, Star, Search, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
 
@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/", label: "今日日报", icon: Newspaper },
   { href: "/history", label: "历史", icon: Clock },
   { href: "/favorites", label: "收藏", icon: Star },
+  { href: "/search", label: "搜索", icon: Search },
   { href: "/settings", label: "设置", icon: Settings },
 ]
 
