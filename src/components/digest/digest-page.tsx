@@ -119,8 +119,9 @@ export function DigestPage() {
 
       {!loading && hasDigest && (
         <div className="mt-6">
-          {/* Tab 切换 */}
-          <div className="flex items-center gap-1 mb-6 p-1 rounded-lg bg-muted/50 w-fit">
+          {/* Tab 切换（滚动时固定） */}
+          <div className="sticky top-14 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur-sm">
+          <div className="flex items-center gap-1 mb-0 p-1 rounded-lg bg-muted/50 w-fit">
             <button
               onClick={() => setActiveTab("recommended")}
               className={cn(
@@ -148,12 +149,13 @@ export function DigestPage() {
               <span className="text-xs opacity-60">{totalAll}</span>
             </button>
           </div>
+          </div>
 
           {/* 侧边栏 + 内容区 */}
           <div className="flex gap-6">
             {/* 左侧信息源筛选栏（固定） */}
             <aside className="w-44 shrink-0 hidden lg:block">
-              <div className="sticky top-4">
+              <div className="sticky top-[7.5rem]">
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
                   信息源
                 </h3>
