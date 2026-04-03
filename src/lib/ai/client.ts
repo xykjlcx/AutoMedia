@@ -6,7 +6,7 @@ import { aiSettings } from '../db/schema'
 import { eq } from 'drizzle-orm'
 
 export interface AIConfig {
-  provider: string // 'openai' | 'anthropic'（API 协议，不是服务商）
+  provider: string // 'openai' | 'anthropic'
   baseUrl: string
   apiKey: string
   fastModel: string
@@ -43,15 +43,16 @@ export function getAIConfig(): AIConfig {
 // 根据 API 协议创建模型实例
 function createModel(config: AIConfig, modelName: string): LanguageModel {
   if (config.provider === 'anthropic') {
-    // Anthropic Messages 原生协议
     const provider = createAnthropic({
       apiKey: config.apiKey,
       ...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
+      // 第三方兼容服务可能需要 Authorization header
+      headers: { 'Authorization': `Bearer ${config.apiKey}` },
     })
     return provider(modelName)
   }
 
-  // 默认：OpenAI Chat Completions 协议（兼容 OpenAI / DeepSeek / Gemini / 中转站 / 自部署等）
+  // OpenAI Chat Completions 协议
   const provider = createOpenAI({
     apiKey: config.apiKey,
     baseURL: config.baseUrl || 'https://api.openai.com/v1',

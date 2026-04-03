@@ -61,9 +61,9 @@ export async function runDigestPipeline(date: string): Promise<string> {
         })
         allItems.push(...items)
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
+        const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
         errors[source.id] = msg
-        console.error(`[pipeline] ${source.name} 采集失败:`, msg)
+        console.error(`[pipeline] ${source.name} 采集失败:`, err)
       }
     }
 

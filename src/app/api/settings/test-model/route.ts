@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       errorDetail = err.message
 
       // Anthropic SDK 的错误对象可能包含 status 和 response
-      const apiErr = err as Record<string, unknown>
+      const apiErr = err as unknown as Record<string, unknown>
       if (apiErr.status) {
         errorDetail = `HTTP ${apiErr.status}: ${err.message}`
       }

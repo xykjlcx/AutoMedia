@@ -1,5 +1,4 @@
-import { generateObject } from 'ai'
-import { z } from 'zod'
+import { generateText } from 'ai'
 import { getModels } from './client'
 import type { ScoredItem } from './scoring'
 
@@ -8,9 +7,15 @@ export interface ClusteredItem extends ScoredItem {
   clusterSources: string[]
 }
 
-const clusterSchema = z.object({
-  clusters: z.array(z.array(z.number())),
-})
+// 从 AI 回复中提取 JSON
+function extractJson(text: string): string | null {
+  const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (codeBlock) return codeBlock[1].trim()
+  const brace = text.indexOf('{')
+  const lastBrace = text.lastIndexOf('}')
+  if (brace !== -1 && lastBrace > brace) return text.slice(brace, lastBrace + 1)
+  return null
+}
 
 // 用 AI 判断哪些条目在讨论同一件事
 export async function clusterItems(items: ScoredItem[]): Promise<ClusteredItem[]> {
@@ -34,19 +39,25 @@ export async function clusterItems(items: ScoredItem[]): Promise<ClusteredItem[]
   }))
 
   try {
-    const { object } = await generateObject({
+    const { text } = await generateText({
       model: getModels().fast,
-      schema: clusterSchema,
       prompt: `以下是来自不同平台的资讯标题。请找出讨论同一事件/话题的条目，将它们分组。
 
 ${itemList}
 
-只需要返回有重复的组（2个及以上条目的组）。如果没有重复，返回空数组。`,
+请严格只返回 JSON，不要有其他文字：
+{"clusters": [[0, 5], [3, 7, 12], ...]}
+
+只需要返回有重复的组（2个及以上条目的组）。如果没有重复，返回 {"clusters": []}`,
     })
 
+    const jsonStr = extractJson(text)
+    if (!jsonStr) return result
+
+    const { clusters } = JSON.parse(jsonStr) as { clusters: number[][] }
     const merged = new Set<number>()
 
-    for (const group of object.clusters) {
+    for (const group of clusters) {
       if (group.length < 2) continue
 
       const sorted = [...group].sort((a, b) => (items[b]?.aiScore || 0) - (items[a]?.aiScore || 0))

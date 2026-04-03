@@ -1,5 +1,4 @@
-import { generateObject } from 'ai'
-import { z } from 'zod'
+import { generateText } from 'ai'
 import { getModels } from './client'
 import type { CollectedItem } from '../collectors/types'
 
@@ -19,12 +18,20 @@ const INTEREST_DOMAINS = [
   '互联网产品 / 创业 / SaaS',
 ]
 
-const scoreSchema = z.array(z.object({
-  index: z.number(),
-  relevance: z.number().min(0).max(10),
-  novelty: z.number().min(0).max(10),
-  impact: z.number().min(0).max(10),
-}))
+// 从 AI 回复中提取 JSON
+function extractJson(text: string): string | null {
+  // 尝试提取 ```json ... ``` 代码块
+  const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (codeBlock) return codeBlock[1].trim()
+  // 尝试找 [ ... ] 或 { ... }
+  const bracket = text.indexOf('[')
+  const lastBracket = text.lastIndexOf(']')
+  if (bracket !== -1 && lastBracket > bracket) return text.slice(bracket, lastBracket + 1)
+  const brace = text.indexOf('{')
+  const lastBrace = text.lastIndexOf('}')
+  if (brace !== -1 && lastBrace > brace) return text.slice(brace, lastBrace + 1)
+  return null
+}
 
 // 批量评分，每批 10 条
 export async function scoreItems(items: CollectedItem[]): Promise<ScoredItem[]> {
@@ -38,9 +45,8 @@ export async function scoreItems(items: CollectedItem[]): Promise<ScoredItem[]> 
     )).join('\n\n')
 
     try {
-      const { object: scores } = await generateObject({
+      const { text } = await generateText({
         model: getModels().fast,
-        schema: scoreSchema,
         prompt: `你是一个资讯筛选 AI。请对以下资讯条目进行评分。
 
 关注领域：
@@ -51,10 +57,17 @@ ${INTEREST_DOMAINS.map(d => `- ${d}`).join('\n')}
 - novelty: 是否有新信息、新观点
 - impact: 对行业/技术的影响程度
 
+请严格只返回 JSON 数组，不要有其他文字：
+[{"index": 0, "relevance": 8, "novelty": 7, "impact": 6}, ...]
+
 资讯列表：
 ${itemList}`,
       })
 
+      const jsonStr = extractJson(text)
+      if (!jsonStr) { console.error('[scoring] 无法提取 JSON'); continue }
+
+      const scores: Array<{ index: number; relevance: number; novelty: number; impact: number }> = JSON.parse(jsonStr)
       for (const score of scores) {
         const item = batch[score.index]
         if (!item) continue
