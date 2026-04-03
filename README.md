@@ -2,6 +2,17 @@
 
 AI 驱动的每日资讯聚合工具。从多平台采集内容，经 AI 评分、去重、摘要后以日报形式展示。
 
+## 预览
+
+![首页 - 亮色模式](docs/screenshots/home-light.png)
+
+<details>
+<summary>暗色模式</summary>
+
+![首页 - 暗色模式](docs/screenshots/home-dark.png)
+
+</details>
+
 ## 功能特性
 
 - **多源并行采集**：GitHub Trending、知乎热榜、Hacker News、36氪、少数派
