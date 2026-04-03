@@ -1,9 +1,206 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send } from "lucide-react"
+import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+
+// ── 模型测试对话框 ──
+interface TestResult {
+  success: boolean
+  modelName: string
+  prompt: string
+  reply?: string
+  error?: string
+  duration?: number
+  usage?: { promptTokens: number; completionTokens: number }
+}
+
+function ModelTestDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [testingFast, setTestingFast] = useState(false)
+  const [testingQuality, setTestingQuality] = useState(false)
+  const [fastResult, setFastResult] = useState<TestResult | null>(null)
+  const [qualityResult, setQualityResult] = useState<TestResult | null>(null)
+
+  const testModel = async (type: 'fast' | 'quality') => {
+    const setTesting = type === 'fast' ? setTestingFast : setTestingQuality
+    const setResult = type === 'fast' ? setFastResult : setQualityResult
+    setTesting(true)
+    setResult(null)
+
+    try {
+      const res = await fetch('/api/settings/test-model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modelType: type }),
+      })
+      const data: TestResult = await res.json()
+      setResult(data)
+    } catch {
+      setResult({ success: false, modelName: '', prompt: '', error: '网络请求失败' })
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const handleTestBoth = () => {
+    testModel('fast')
+    testModel('quality')
+  }
+
+  // 重置
+  useEffect(() => {
+    if (open) {
+      setFastResult(null)
+      setQualityResult(null)
+    }
+  }, [open])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* 遮罩 */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+
+      {/* 对话框 */}
+      <div className="relative w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto rounded-xl border border-border/60 bg-background shadow-2xl">
+        <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-border/60 bg-background/95 backdrop-blur-sm rounded-t-xl">
+          <h3 className="font-serif-display text-lg font-semibold text-foreground flex items-center gap-2">
+            <FlaskConical className="size-5" />
+            测试模型连通性
+          </h3>
+          <button onClick={onClose} className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {/* 测试按钮 */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleTestBoth}
+              disabled={testingFast || testingQuality}
+              className={cn(
+                "flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
+                "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
+                (testingFast || testingQuality) && "opacity-60 cursor-wait"
+              )}
+            >
+              {(testingFast || testingQuality) ? (
+                <><Loader2 className="size-4 animate-spin" />测试中...</>
+              ) : (
+                <><FlaskConical className="size-4" />测试两个模型</>
+              )}
+            </button>
+          </div>
+
+          {/* 快速模型结果 */}
+          <TestResultCard
+            label="快速模型"
+            icon={<Zap className="size-4 text-amber-500" />}
+            testing={testingFast}
+            result={fastResult}
+          />
+
+          {/* 质量模型结果 */}
+          <TestResultCard
+            label="质量模型"
+            icon={<Sparkles className="size-4 text-purple-500" />}
+            testing={testingQuality}
+            result={qualityResult}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TestResultCard({ label, icon, testing, result }: {
+  label: string
+  icon: React.ReactNode
+  testing: boolean
+  result: TestResult | null
+}) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
+        {icon}
+        <span className="text-sm font-medium text-foreground">{label}</span>
+        {result && (
+          <span className="ml-auto">
+            {result.success ? (
+              <CheckCircle2 className="size-4 text-green-500" />
+            ) : (
+              <XCircle className="size-4 text-destructive" />
+            )}
+          </span>
+        )}
+        {testing && <Loader2 className="size-4 animate-spin ml-auto text-muted-foreground" />}
+      </div>
+
+      {(testing || result) && (
+        <div className="px-4 py-3 space-y-3 text-sm">
+          {/* 模型名 */}
+          {result && (
+            <div>
+              <span className="text-xs text-muted-foreground">模型</span>
+              <p className="font-mono text-xs mt-0.5">{result.modelName}</p>
+            </div>
+          )}
+
+          {/* 发送内容 */}
+          {result && (
+            <div>
+              <span className="text-xs text-muted-foreground">发送</span>
+              <p className="mt-0.5 px-3 py-2 rounded bg-muted/50 text-xs">{result.prompt}</p>
+            </div>
+          )}
+
+          {/* 回复或错误 */}
+          {testing && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" />
+              等待模型回复...
+            </div>
+          )}
+
+          {result?.success && (
+            <div>
+              <span className="text-xs text-muted-foreground">回复</span>
+              <p className="mt-0.5 px-3 py-2 rounded bg-green-50 dark:bg-green-950/20 text-xs text-foreground border border-green-100 dark:border-green-900/30">
+                {result.reply}
+              </p>
+            </div>
+          )}
+
+          {result && !result.success && (
+            <div>
+              <span className="text-xs text-muted-foreground">错误</span>
+              <p className="mt-0.5 px-3 py-2 rounded bg-red-50 dark:bg-red-950/20 text-xs text-destructive border border-red-100 dark:border-red-900/30 break-all">
+                {result.error}
+              </p>
+            </div>
+          )}
+
+          {/* 耗时和 token */}
+          {result?.success && (
+            <div className="flex gap-4 text-xs text-muted-foreground pt-1">
+              {result.duration && <span>耗时 {(result.duration / 1000).toFixed(1)}s</span>}
+              {result.usage && <span>Token: {result.usage.promptTokens} → {result.usage.completionTokens}</span>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!testing && !result && (
+        <div className="px-4 py-4 text-xs text-muted-foreground text-center">
+          点击上方按钮开始测试
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface SettingsData {
   provider: string
@@ -299,6 +496,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showTestDialog, setShowTestDialog] = useState(false)
 
   const [schedule, setSchedule] = useState<ScheduleData>({
     enabled: false,
@@ -545,8 +743,8 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* 保存按钮 */}
-        <div className="flex items-center gap-3">
+        {/* 保存 + 测试按钮 */}
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={handleSave}
             disabled={saving}
@@ -557,6 +755,14 @@ export default function SettingsPage() {
             )}
           >
             {saving ? "保存中..." : "保存设置"}
+          </button>
+
+          <button
+            onClick={() => setShowTestDialog(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border border-border/60 bg-background hover:bg-muted active:scale-[0.98]"
+          >
+            <FlaskConical className="size-4" />
+            测试连通性
           </button>
 
           {saved && (
@@ -573,6 +779,9 @@ export default function SettingsPage() {
             </span>
           )}
         </div>
+
+        {/* 模型测试对话框 */}
+        <ModelTestDialog open={showTestDialog} onClose={() => setShowTestDialog(false)} />
 
         <Separator />
 
