@@ -6,10 +6,11 @@ import { format } from "date-fns"
 import { Newspaper, Sparkles, List } from "lucide-react"
 import { DateNav } from "@/components/digest/date-nav"
 import { DigestTrigger } from "@/components/digest/digest-trigger"
-import { SourceGroup } from "@/components/digest/source-group"
+import { DigestCard } from "@/components/digest/digest-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import type { DigestItem } from "@/components/digest/digest-card"
 
 interface DigestData {
@@ -17,9 +18,6 @@ interface DigestData {
   groups: Record<string, DigestItem[]>
   availableDates: string[]
 }
-
-// 来源排序优先级
-const SOURCE_ORDER = ["github", "hackernews", "producthunt", "juejin", "zhihu"]
 
 type TabKey = "recommended" | "all"
 
@@ -32,6 +30,8 @@ export function DigestPage() {
   const [data, setData] = useState<DigestData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabKey>("recommended")
+  // 信息源筛选：null = 全部，string = 指定来源
+  const [selectedSource, setSelectedSource] = useState<string | null>(null)
 
   const fetchDigest = useCallback(async (date: string) => {
     setLoading(true)
@@ -63,40 +63,38 @@ export function DigestPage() {
     fetchDigest(currentDate)
   }
 
-  // 根据当前 Tab 过滤数据
-  const filteredGroups: Record<string, DigestItem[]> = {}
-  if (data) {
-    for (const [source, items] of Object.entries(data.groups)) {
-      const filtered = activeTab === "recommended"
-        ? items.filter(item => item.isRecommended !== false)
-        : items
-      if (filtered.length > 0) {
-        filteredGroups[source] = filtered
-      }
-    }
-  }
+  // 全部条目（扁平化）
+  const allItems = data ? Object.values(data.groups).flat() : []
 
-  const sortedSources = Object.keys(filteredGroups).sort((a, b) => {
-    const ia = SOURCE_ORDER.indexOf(a)
-    const ib = SOURCE_ORDER.indexOf(b)
-    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
-  })
+  // 按 Tab 过滤
+  const tabFiltered = activeTab === "recommended"
+    ? allItems.filter(item => item.isRecommended !== false)
+    : allItems
+
+  // 按来源过滤
+  const finalItems = selectedSource
+    ? tabFiltered.filter(item => item.source === selectedSource)
+    : tabFiltered
+
+  // 按分数排序
+  const sortedItems = [...finalItems].sort((a, b) => b.aiScore - a.aiScore)
 
   // 统计
-  const allItems = data ? Object.values(data.groups).flat() : []
   const totalAll = allItems.length
   const totalRecommended = allItems.filter(i => i.isRecommended !== false).length
   const hasDigest = totalAll > 0
-  const currentTotal = sortedSources.reduce((sum, s) => sum + (filteredGroups[s]?.length || 0), 0)
-  const unreadCount = sortedSources.reduce(
-    (sum, s) => sum + (filteredGroups[s]?.filter(item => item.isRead !== true).length || 0),
-    0
-  )
+  const unreadCount = sortedItems.filter(item => item.isRead !== true).length
 
-  let runningIndex = 0
+  // 来源列表及计数（基于当前 Tab 过滤后的数据）
+  const sourceCounts = new Map<string, number>()
+  for (const item of tabFiltered) {
+    sourceCounts.set(item.source, (sourceCounts.get(item.source) || 0) + 1)
+  }
+  const availableSources = Array.from(sourceCounts.entries())
+    .sort((a, b) => b[1] - a[1]) // 按数量降序
 
   return (
-    <div className="mx-auto max-w-[720px] px-4 pb-16">
+    <div className="mx-auto max-w-6xl px-4 pb-16">
       <DateNav
         currentDate={currentDate}
         availableDates={data?.availableDates || []}
@@ -112,12 +110,9 @@ export function DigestPage() {
       />
 
       {loading && (
-        <div className="space-y-4 mt-6">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-28 w-full rounded-lg" />
-            </div>
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-32 w-full rounded-lg" />
           ))}
         </div>
       )}
@@ -125,7 +120,7 @@ export function DigestPage() {
       {!loading && hasDigest && (
         <div className="mt-6">
           {/* Tab 切换 */}
-          <div className="flex items-center gap-1 mb-4 p-1 rounded-lg bg-muted/50 w-fit">
+          <div className="flex items-center gap-1 mb-6 p-1 rounded-lg bg-muted/50 w-fit">
             <button
               onClick={() => setActiveTab("recommended")}
               className={cn(
@@ -154,32 +149,82 @@ export function DigestPage() {
             </button>
           </div>
 
-          <p className="text-xs text-muted-foreground mb-6">
-            共 {currentTotal} 条，来自 {sortedSources.length} 个信息源
-            {unreadCount > 0 && (
-              <span className="ml-1 text-[var(--color-warm-accent)]">（{unreadCount} 条未读）</span>
-            )}
-          </p>
+          {/* 侧边栏 + 内容区 */}
+          <div className="flex gap-6">
+            {/* 左侧信息源筛选栏（固定） */}
+            <aside className="w-44 shrink-0 hidden lg:block">
+              <div className="sticky top-4">
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                  信息源
+                </h3>
+                <nav className="space-y-1">
+                  {/* 全部 */}
+                  <button
+                    onClick={() => setSelectedSource(null)}
+                    className={cn(
+                      "flex items-center justify-between w-full px-2.5 py-1.5 rounded-md text-sm transition-colors",
+                      selectedSource === null
+                        ? "bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)] font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <span>全部来源</span>
+                    <span className="text-xs opacity-60">{tabFiltered.length}</span>
+                  </button>
+                  {/* 各来源 */}
+                  {availableSources.map(([source, count]) => {
+                    const meta = SOURCE_META[source]
+                    const color = SOURCE_COLORS[source] || "#9C9590"
+                    return (
+                      <button
+                        key={source}
+                        onClick={() => setSelectedSource(selectedSource === source ? null : source)}
+                        className={cn(
+                          "flex items-center justify-between w-full px-2.5 py-1.5 rounded-md text-sm transition-colors",
+                          selectedSource === source
+                            ? "bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)] font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                      >
+                        <span className="flex items-center gap-1.5 truncate">
+                          <span
+                            className="inline-block size-2 rounded-full shrink-0"
+                            style={{ backgroundColor: color }}
+                          />
+                          {meta?.name || source}
+                        </span>
+                        <span className="text-xs opacity-60 shrink-0 ml-2">{count}</span>
+                      </button>
+                    )
+                  })}
+                </nav>
+              </div>
+            </aside>
 
-          {sortedSources.map(source => {
-            const items = filteredGroups[source]
-            const startIdx = runningIndex
-            runningIndex += items.length
-            return (
-              <SourceGroup
-                key={source}
-                source={source}
-                items={items}
-                startIndex={startIdx}
-              />
-            )
-          })}
+            {/* 右侧内容区 */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground mb-4">
+                共 {sortedItems.length} 条
+                {selectedSource && <span>，来源：{SOURCE_META[selectedSource]?.name || selectedSource}</span>}
+                {unreadCount > 0 && (
+                  <span className="ml-1 text-[var(--color-warm-accent)]">（{unreadCount} 条未读）</span>
+                )}
+              </p>
 
-          {sortedSources.length === 0 && activeTab === "recommended" && (
-            <div className="text-center py-12 text-sm text-muted-foreground">
-              暂无推荐内容，试试切换到"全部资讯"查看
+              {/* 双列卡片网格 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sortedItems.map((item, i) => (
+                  <DigestCard key={item.id} item={item} index={i} />
+                ))}
+              </div>
+
+              {sortedItems.length === 0 && activeTab === "recommended" && (
+                <div className="text-center py-12 text-sm text-muted-foreground">
+                  暂无推荐内容，试试切换到"全部资讯"查看
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 
