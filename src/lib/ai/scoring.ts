@@ -39,7 +39,7 @@ export async function scoreItems(
   onProgress?: (done: number) => void,
 ): Promise<ScoredItem[]> {
   const results: ScoredItem[] = []
-  const batchSize = 10
+  const batchSize = 20
 
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize)
@@ -95,8 +95,8 @@ ${itemList}`,
   return results
 }
 
-// 按源分组，每源取 top 5，且分数 >= 6
-export function filterTopItems(items: ScoredItem[], maxPerSource = 5, minScore = 6): ScoredItem[] {
+// 按源分组，每源取 top 5，且分数 >= 5（降低阈值保留更多内容）
+export function filterTopItems(items: ScoredItem[], maxPerSource = 5, minScore = 5): ScoredItem[] {
   const bySource = new Map<string, ScoredItem[]>()
 
   for (const item of items) {
