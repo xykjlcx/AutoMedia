@@ -15,7 +15,7 @@ interface TestResult {
   duration?: number
   usage?: { promptTokens: number; completionTokens: number }
   debug?: { provider: string; baseUrl: string; hasApiKey: boolean; apiKeyPrefix: string }
-  resultKeys?: string[]
+  attempts?: number
 }
 
 function ModelTestDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -203,7 +203,7 @@ function TestResultCard({ label, icon, testing, result }: {
             <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-1">
               {result.duration && <span>耗时 {(result.duration / 1000).toFixed(1)}s</span>}
               {result.usage && <span>Token: {result.usage.promptTokens || '?'} → {result.usage.completionTokens || '?'}</span>}
-              {result.resultKeys && <span className="opacity-60">keys: {result.resultKeys.join(', ')}</span>}
+              {result.attempts && result.attempts > 1 && <span className="opacity-60">重试 {result.attempts - 1} 次</span>}
             </div>
           )}
         </div>
