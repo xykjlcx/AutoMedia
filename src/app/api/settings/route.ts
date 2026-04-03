@@ -82,6 +82,6 @@ export async function POST(request: Request) {
 }
 
 function maskKey(key: string): string {
-  if (!key || key.length < 12) return key ? '***' : ''
-  return `${key.slice(0, 8)}***${key.slice(-4)}`
+  if (!key || key.length < 10) return key ? '***' : ''
+  return `${key.slice(0, 6)}***${key.slice(-4)}`
 }
