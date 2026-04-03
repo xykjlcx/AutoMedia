@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid'
 import { db } from './db/index'
 import { rawItems, digestRuns } from './db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
-import { getPublicSources } from './sources'
+import { getPublicSources, getEnabledSources } from './sources'
 import { rssCollector } from './collectors/rss'
 import { scoreItems } from './ai/scoring'
 import { clusterItems } from './ai/clustering'
@@ -52,11 +52,12 @@ export async function runDigestPipeline(date: string): Promise<string> {
   const runId = uuid()
   const now = new Date().toISOString()
 
-  // 初始化所有源为 pending
+  // 初始化所有源为 pending（含私域源，标记为待实现）
   const publicSources = getPublicSources()
-  const allSources = publicSources
+  const allEnabledSources = getEnabledSources()
+  const privateSources = allEnabledSources.filter(s => s.type === 'private')
   const sourcesProgress: Record<string, SourceProgress> = {}
-  for (const s of allSources) {
+  for (const s of allEnabledSources) {
     sourcesProgress[s.id] = { status: 'pending', name: s.name, icon: s.icon }
   }
 
@@ -108,6 +109,14 @@ export async function runDigestPipeline(date: string): Promise<string> {
         await saveProgress(runId, progress, date)
         console.error(`[pipeline] ${source.name} 采集失败:`, err)
       }
+    }
+
+    // 私域源标记为待实现
+    for (const source of privateSources) {
+      updateSource(source.id, { status: 'error', error: '私域采集待实现' })
+    }
+    if (privateSources.length > 0) {
+      await saveProgress(runId, progress, date)
     }
 
     // 写入原始数据（按 URL 去重，避免重复采集）
