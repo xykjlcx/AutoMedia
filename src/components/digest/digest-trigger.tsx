@@ -27,9 +27,17 @@ interface SourceProgress {
 interface PipelineProgress {
   phase: "collecting" | "scoring" | "clustering" | "summarizing" | "completed" | "failed"
   sources?: Record<string, SourceProgress>
-  scoring?: { total: number; done: number; filtered: number; failed?: number }
-  clustering?: { total: number; done: number }
-  summarizing?: { total: number; done: number; failed?: number }
+  scoring?: { total: number; done: number; filtered: number; failed?: number; duration?: number }
+  clustering?: { total: number; done: number; duration?: number }
+  summarizing?: { total: number; done: number; failed?: number; duration?: number }
+  timing?: {
+    collecting?: number
+    scoring?: number
+    clustering?: number
+    summarizing?: number
+    trends?: number
+    total?: number
+  }
   detail?: string
 }
 
@@ -51,7 +59,7 @@ function getPhaseIndex(phase?: string): number {
 
 // ── 步骤条组件 ──
 
-function StepBar({ currentPhase }: { currentPhase?: string }) {
+function StepBar({ currentPhase, timing }: { currentPhase?: string; timing?: PipelineProgress["timing"] }) {
   const currentIndex = getPhaseIndex(currentPhase)
 
   return (
@@ -84,6 +92,11 @@ function StepBar({ currentPhase }: { currentPhase?: string }) {
               >
                 {phase.label}
               </span>
+              {isDone && timing?.[phase.key as keyof typeof timing] != null && (
+                <span className="text-[9px] text-muted-foreground/60 tabular-nums">
+                  {timing[phase.key as keyof typeof timing]}s
+                </span>
+              )}
             </div>
             {/* 连接线 */}
             {i < PHASES.length - 1 && (
@@ -339,7 +352,7 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
       {/* 步骤条 + 详细进度 */}
       {isRunning && progress && (
         <div className="w-full flex flex-col items-center gap-3">
-          <StepBar currentPhase={progress.phase} />
+          <StepBar currentPhase={progress.phase} timing={progress.timing} />
 
           {/* 采集阶段：源列表 */}
           {progress.phase === "collecting" && progress.sources && (

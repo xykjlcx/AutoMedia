@@ -28,10 +28,19 @@ export interface PipelineProgress {
   phase: 'collecting' | 'scoring' | 'clustering' | 'summarizing' | 'completed' | 'failed'
   // 采集阶段每个源的状态
   sources?: Record<string, SourceProgress>
-  // AI 阶段的统计
-  scoring?: { total: number; done: number; filtered: number; failed?: number }
-  clustering?: { total: number; done: number }
-  summarizing?: { total: number; done: number; failed?: number }
+  // AI 阶段的统计（含每阶段耗时）
+  scoring?: { total: number; done: number; filtered: number; failed?: number; duration?: number }
+  clustering?: { total: number; done: number; duration?: number }
+  summarizing?: { total: number; done: number; failed?: number; duration?: number }
+  // 阶段耗时汇总（秒）
+  timing?: {
+    collecting?: number
+    scoring?: number
+    clustering?: number
+    summarizing?: number
+    trends?: number
+    total?: number
+  }
   detail?: string
 }
 
@@ -66,8 +75,10 @@ export async function runDigestPipeline(date: string): Promise<string> {
   const progress: PipelineProgress = {
     phase: 'collecting',
     sources: sourcesProgress,
+    timing: {},
     detail: '开始采集...',
   }
+  const pipelineStartTime = Date.now()
 
   // 创建执行记录
   await db.insert(digestRuns).values({
@@ -89,6 +100,7 @@ export async function runDigestPipeline(date: string): Promise<string> {
     }
 
     // 所有源并行采集
+    const collectStartTime = Date.now()
     for (const source of publicSources) {
       updateSource(source.id, { status: 'running' })
     }
@@ -121,6 +133,8 @@ export async function runDigestPipeline(date: string): Promise<string> {
       }
     }
     await saveProgress(runId, progress, date)
+
+    progress.timing!.collecting = Math.round((Date.now() - collectStartTime) / 1000)
 
     // 私域源标记为待实现
     for (const source of privateSources) {
@@ -167,9 +181,11 @@ export async function runDigestPipeline(date: string): Promise<string> {
     // 没有新内容则跳过 AI 处理
     if (newItems.length === 0) {
       const totalDigest = existingDigestUrls.size
+      progress.timing!.total = Math.round((Date.now() - pipelineStartTime) / 1000)
       const completedProgress: PipelineProgress = {
         phase: 'completed',
         sources: progress.sources,
+        timing: progress.timing,
         detail: `无新增内容（已有 ${totalDigest} 条），跳过 AI 处理`,
       }
       await db.update(digestRuns).set({
@@ -188,6 +204,7 @@ export async function runDigestPipeline(date: string): Promise<string> {
     }
 
     // ── Stage 1: AI 评分筛选（仅新增条目）──
+    const scoreStartTime = Date.now()
     progress.phase = 'scoring'
     progress.scoring = { total: newItems.length, done: 0, filtered: 0 }
     progress.detail = `AI 评分中（${skippedCount} 条已有，${newItems.length} 条新增）...`
@@ -209,10 +226,13 @@ export async function runDigestPipeline(date: string): Promise<string> {
     progress.scoring!.filtered = recommendedCount
     progress.scoring!.failed = scoreResult.failedCount
     const failNote = scoreResult.failedCount > 0 ? `（${scoreResult.failedCount} 条评分失败）` : ''
+    progress.scoring!.duration = Math.round((Date.now() - scoreStartTime) / 1000)
+    progress.timing!.scoring = progress.scoring!.duration
     progress.detail = `评分完成，${recommendedCount} 条推荐${failNote}`
     await saveProgress(runId, progress, date)
 
     // ── Stage 2: 跨源去重（仅新增条目之间 + 与已有条目的去重）──
+    const clusterStartTime = Date.now()
     progress.phase = 'clustering'
     progress.clustering = { total: scored.length, done: 0 }
     progress.detail = '跨源去重中...'
@@ -220,10 +240,13 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
     const clustered = await clusterItems(scored)
     progress.clustering!.done = scored.length
+    progress.clustering!.duration = Math.round((Date.now() - clusterStartTime) / 1000)
+    progress.timing!.clustering = progress.clustering!.duration
     progress.detail = `去重完成，剩余 ${clustered.length} 条新增`
     await saveProgress(runId, progress, date)
 
     // ── Stage 3: AI 摘要生成（仅新增条目）──
+    const summarizeStartTime = Date.now()
     progress.phase = 'summarizing'
     progress.summarizing = { total: clustered.length, done: 0 }
     progress.detail = 'AI 摘要生成中...'
@@ -237,9 +260,12 @@ export async function runDigestPipeline(date: string): Promise<string> {
     const summarized = summarizeResult.items
     progress.summarizing!.done = clustered.length
     progress.summarizing!.failed = summarizeResult.failedCount
+    progress.summarizing!.duration = Math.round((Date.now() - summarizeStartTime) / 1000)
+    progress.timing!.summarizing = progress.summarizing!.duration
     await saveProgress(runId, progress, date)
 
     // ── Stage 3.5: 趋势分析 ──
+    const trendsStartTime = Date.now()
     progress.detail = '趋势分析中...'
     await saveProgress(runId, progress, date)
 
@@ -247,6 +273,8 @@ export async function runDigestPipeline(date: string): Promise<string> {
       date,
       summarized.map(item => ({ url: item.url, title: item.title, source: item.source }))
     )
+
+    progress.timing!.trends = Math.round((Date.now() - trendsStartTime) / 1000)
 
     // 增量写入新条目（不删除旧数据，保留收藏和已读状态）
     if (summarized.length > 0) {
@@ -282,12 +310,14 @@ export async function runDigestPipeline(date: string): Promise<string> {
       .get(date) as { cnt: number }).cnt
 
     // 完成
+    progress.timing!.total = Math.round((Date.now() - pipelineStartTime) / 1000)
     const completedProgress: PipelineProgress = {
       phase: 'completed',
       sources: progress.sources,
       scoring: progress.scoring,
       clustering: progress.clustering,
       summarizing: progress.summarizing,
+      timing: progress.timing,
       detail: `完成！新增 ${summarized.length} 条，共 ${totalDigest} 条`,
     }
     await db.update(digestRuns).set({
