@@ -1,4 +1,6 @@
-import { getAnthropicClient } from './client'
+import { generateObject } from 'ai'
+import { z } from 'zod'
+import { models } from './client'
 import type { CollectedItem } from '../collectors/types'
 
 export interface ScoredItem extends CollectedItem {
@@ -17,9 +19,15 @@ const INTEREST_DOMAINS = [
   '互联网产品 / 创业 / SaaS',
 ]
 
+const scoreSchema = z.array(z.object({
+  index: z.number(),
+  relevance: z.number().min(0).max(10),
+  novelty: z.number().min(0).max(10),
+  impact: z.number().min(0).max(10),
+}))
+
 // 批量评分，每批 10 条
 export async function scoreItems(items: CollectedItem[]): Promise<ScoredItem[]> {
-  const client = getAnthropicClient()
   const results: ScoredItem[] = []
   const batchSize = 10
 
@@ -29,12 +37,11 @@ export async function scoreItems(items: CollectedItem[]): Promise<ScoredItem[]> 
       `[${idx}] 来源:${item.source} | 标题:${item.title}\n内容摘要:${item.content.slice(0, 300)}`
     )).join('\n\n')
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      messages: [{
-        role: 'user',
-        content: `你是一个资讯筛选 AI。请对以下资讯条目进行评分。
+    try {
+      const { object: scores } = await generateObject({
+        model: models.fast,
+        schema: scoreSchema,
+        prompt: `你是一个资讯筛选 AI。请对以下资讯条目进行评分。
 
 关注领域：
 ${INTEREST_DOMAINS.map(d => `- ${d}`).join('\n')}
@@ -44,23 +51,10 @@ ${INTEREST_DOMAINS.map(d => `- ${d}`).join('\n')}
 - novelty: 是否有新信息、新观点
 - impact: 对行业/技术的影响程度
 
-请严格按 JSON 数组格式返回，每项包含 index、relevance、novelty、impact 三个分数：
-[{"index": 0, "relevance": 8, "novelty": 7, "impact": 6}, ...]
-
 资讯列表：
 ${itemList}`,
-      }],
-    })
+      })
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : ''
-    // 找第一个 [ 到最后一个 ] 之间的内容
-    const firstBracket = text.indexOf('[')
-    const lastBracket = text.lastIndexOf(']')
-    if (firstBracket === -1 || lastBracket === -1 || lastBracket <= firstBracket) continue
-    const jsonMatch = [text.slice(firstBracket, lastBracket + 1)]
-
-    try {
-      const scores: Array<{ index: number; relevance: number; novelty: number; impact: number }> = JSON.parse(jsonMatch[0])
       for (const score of scores) {
         const item = batch[score.index]
         if (!item) continue
@@ -75,8 +69,8 @@ ${itemList}`,
           },
         })
       }
-    } catch {
-      console.error('[scoring] JSON 解析失败，跳过当前批次')
+    } catch (err) {
+      console.error('[scoring] 评分失败，跳过当前批次:', err)
     }
   }
 
