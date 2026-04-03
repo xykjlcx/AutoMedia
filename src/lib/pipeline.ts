@@ -143,10 +143,43 @@ export async function runDigestPipeline(date: string): Promise<string> {
       }
     }
 
-    // ── Stage 1: AI 评分筛选 ──
+    // ── 增量过滤：只处理当天尚未入库的条目 ──
+    const existingDigestUrls = new Set(
+      (db.$client
+        .prepare('SELECT url FROM digest_items WHERE digest_date = ?')
+        .all(date) as { url: string }[])
+        .map(r => r.url)
+    )
+    const newItems = allItems.filter(item => !existingDigestUrls.has(item.url))
+    const skippedCount = allItems.length - newItems.length
+
+    // 没有新内容则跳过 AI 处理
+    if (newItems.length === 0) {
+      const totalDigest = existingDigestUrls.size
+      const completedProgress: PipelineProgress = {
+        phase: 'completed',
+        sources: progress.sources,
+        detail: `无新增内容（已有 ${totalDigest} 条），跳过 AI 处理`,
+      }
+      await db.update(digestRuns).set({
+        rawCount: allItems.length,
+        status: 'completed',
+        filteredCount: totalDigest,
+        completedAt: new Date().toISOString(),
+        progress: completedProgress,
+        errors: Object.keys(errors).length > 0 ? errors : null,
+      }).where(eq(digestRuns.id, runId))
+      pipelineEvents.emitProgress({ runId, date, progress: completedProgress })
+      sendDigestNotification(date, totalDigest).catch(err =>
+        console.error('[pipeline] 通知发送失败:', err)
+      )
+      return runId
+    }
+
+    // ── Stage 1: AI 评分筛选（仅新增条目）──
     progress.phase = 'scoring'
-    progress.scoring = { total: allItems.length, done: 0, filtered: 0 }
-    progress.detail = 'AI 评分筛选中...'
+    progress.scoring = { total: newItems.length, done: 0, filtered: 0 }
+    progress.detail = `AI 评分中（${skippedCount} 条已有，${newItems.length} 条新增）...`
     await db.update(digestRuns).set({
       rawCount: allItems.length,
       progress,
@@ -154,22 +187,21 @@ export async function runDigestPipeline(date: string): Promise<string> {
     }).where(eq(digestRuns.id, runId))
     pipelineEvents.emitProgress({ runId, date, progress })
 
-    const scoreResult = await scoreItems(allItems, async (done) => {
+    const scoreResult = await scoreItems(newItems, async (done) => {
       progress.scoring!.done = done
-      progress.detail = `已评分 ${done}/${allItems.length} 条`
+      progress.detail = `已评分 ${done}/${newItems.length} 条`
       await saveProgress(runId, progress, date)
     })
-    // 不过滤，所有评分过的内容都保留，前端用 Tab 分类展示
     const scored = scoreResult.items
     const recommendedCount = scored.filter(s => s.aiScore >= 5).length
-    progress.scoring!.done = allItems.length
+    progress.scoring!.done = newItems.length
     progress.scoring!.filtered = recommendedCount
     progress.scoring!.failed = scoreResult.failedCount
     const failNote = scoreResult.failedCount > 0 ? `（${scoreResult.failedCount} 条评分失败）` : ''
     progress.detail = `评分完成，${recommendedCount} 条推荐${failNote}`
     await saveProgress(runId, progress, date)
 
-    // ── Stage 2: 跨源去重 ──
+    // ── Stage 2: 跨源去重（仅新增条目之间 + 与已有条目的去重）──
     progress.phase = 'clustering'
     progress.clustering = { total: scored.length, done: 0 }
     progress.detail = '跨源去重中...'
@@ -177,10 +209,10 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
     const clustered = await clusterItems(scored)
     progress.clustering!.done = scored.length
-    progress.detail = `去重完成，剩余 ${clustered.length} 条`
+    progress.detail = `去重完成，剩余 ${clustered.length} 条新增`
     await saveProgress(runId, progress, date)
 
-    // ── Stage 3: AI 摘要生成 ──
+    // ── Stage 3: AI 摘要生成（仅新增条目）──
     progress.phase = 'summarizing'
     progress.summarizing = { total: clustered.length, done: 0 }
     progress.detail = 'AI 摘要生成中...'
@@ -196,25 +228,9 @@ export async function runDigestPipeline(date: string): Promise<string> {
     progress.summarizing!.failed = summarizeResult.failedCount
     await saveProgress(runId, progress, date)
 
-    // 写入精选数据（事务保证原子性）
+    // 增量写入新条目（不删除旧数据，保留收藏和已读状态）
     if (summarized.length > 0) {
-      const writeDigest = db.$client.transaction(() => {
-        // 先清理当天旧数据
-        const oldDigestIds = db.$client
-          .prepare('SELECT id FROM digest_items WHERE digest_date = ?')
-          .all(date) as { id: string }[]
-
-        if (oldDigestIds.length > 0) {
-          const idPlaceholders = oldDigestIds.map(() => '?').join(',')
-          db.$client
-            .prepare(`DELETE FROM favorites WHERE digest_item_id IN (${idPlaceholders})`)
-            .run(...oldDigestIds.map(r => r.id))
-        }
-
-        db.$client.prepare('DELETE FROM digest_fts WHERE digest_date = ?').run(date)
-        db.$client.prepare('DELETE FROM digest_items WHERE digest_date = ?').run(date)
-
-        // 插入新数据
+      const writeNewDigest = db.$client.transaction(() => {
         const insertDigest = db.$client.prepare(`
           INSERT INTO digest_items (id, digest_date, source, title, url, author, ai_score, one_liner, summary, cluster_id, cluster_sources, created_at, is_read)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
@@ -236,8 +252,13 @@ export async function runDigestPipeline(date: string): Promise<string> {
         }
       })
 
-      writeDigest()
+      writeNewDigest()
     }
+
+    // 统计当天总数
+    const totalDigest = (db.$client
+      .prepare('SELECT COUNT(*) as cnt FROM digest_items WHERE digest_date = ?')
+      .get(date) as { cnt: number }).cnt
 
     // 完成
     const completedProgress: PipelineProgress = {
@@ -246,11 +267,11 @@ export async function runDigestPipeline(date: string): Promise<string> {
       scoring: progress.scoring,
       clustering: progress.clustering,
       summarizing: progress.summarizing,
-      detail: `完成！共 ${summarized.length} 条精选`,
+      detail: `完成！新增 ${summarized.length} 条，共 ${totalDigest} 条`,
     }
     await db.update(digestRuns).set({
       status: 'completed',
-      filteredCount: summarized.length,
+      filteredCount: totalDigest,
       completedAt: new Date().toISOString(),
       progress: completedProgress,
       errors: Object.keys(errors).length > 0 ? errors : null,
