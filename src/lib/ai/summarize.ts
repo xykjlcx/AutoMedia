@@ -11,7 +11,7 @@ export interface SummarizedItem extends ClusteredItem {
 // 批量生成摘要，每批 5 条
 export async function summarizeItems(
   items: ClusteredItem[],
-  onProgress?: (done: number) => void,
+  onProgress?: (done: number) => Promise<void> | void,
 ): Promise<SummarizedItem[]> {
   const results: SummarizedItem[] = []
   const batchSize = 5
@@ -64,7 +64,7 @@ ${itemList}`,
       }
     }
     // 报告进度：已处理到第几条
-    onProgress?.(Math.min(i + batchSize, items.length))
+    await onProgress?.(Math.min(i + batchSize, items.length))
   }
 
   return results

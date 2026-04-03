@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import { db } from './db/index'
-import { rawItems, digestItems, digestRuns, favorites } from './db/schema'
-import { eq, and, inArray, sql } from 'drizzle-orm'
+import { rawItems, digestRuns } from './db/schema'
+import { eq, and } from 'drizzle-orm'
 import { getPublicSources } from './sources'
 import { rssCollector } from './collectors/rss'
 import { scoreItems } from './ai/scoring'
@@ -150,10 +150,10 @@ export async function runDigestPipeline(date: string): Promise<string> {
       status: 'processing',
     }).where(eq(digestRuns.id, runId))
 
-    const scored = await scoreItems(allItems, (done) => {
+    const scored = await scoreItems(allItems, async (done) => {
       progress.scoring!.done = done
       progress.detail = `已评分 ${done}/${allItems.length} 条`
-      saveProgress(runId, progress)
+      await saveProgress(runId, progress)
     })
     // 不过滤，所有评分过的内容都保留，前端用 Tab 分类展示
     const recommendedCount = scored.filter(s => s.aiScore >= 5).length
@@ -179,49 +179,55 @@ export async function runDigestPipeline(date: string): Promise<string> {
     progress.detail = 'AI 摘要生成中...'
     await saveProgress(runId, progress)
 
-    const summarized = await summarizeItems(clustered, (done) => {
+    const summarized = await summarizeItems(clustered, async (done) => {
       progress.summarizing!.done = done
       progress.detail = `已生成 ${done}/${clustered.length} 条摘要`
-      saveProgress(runId, progress)
+      await saveProgress(runId, progress)
     })
     progress.summarizing!.done = clustered.length
     await saveProgress(runId, progress)
 
-    // 写入精选数据
+    // 写入精选数据（事务保证原子性）
     if (summarized.length > 0) {
-      // 先清理当天旧数据（支持重新生成）
-      // 必须先删收藏（外键约束），再删 digest_items
-      const oldDigestIds = (await db.select({ id: digestItems.id })
-        .from(digestItems).where(eq(digestItems.digestDate, date)))
-        .map(r => r.id)
-      if (oldDigestIds.length > 0) {
-        await db.delete(favorites).where(inArray(favorites.digestItemId, oldDigestIds))
-      }
-      // 清理 FTS 中对应日期的旧数据（在删除 digestItems 之前）
-      db.run(sql`DELETE FROM digest_fts WHERE digest_date = ${date}`)
-      await db.delete(digestItems).where(eq(digestItems.digestDate, date))
+      const writeDigest = db.$client.transaction(() => {
+        // 先清理当天旧数据
+        const oldDigestIds = db.$client
+          .prepare('SELECT id FROM digest_items WHERE digest_date = ?')
+          .all(date) as { id: string }[]
 
-      const digestRecords = summarized.map(item => ({
-        id: uuid(),
-        digestDate: date,
-        source: item.source,
-        title: item.title,
-        url: item.url,
-        author: item.author,
-        aiScore: item.aiScore,
-        oneLiner: item.oneLiner,
-        summary: item.summary,
-        clusterId: item.clusterId,
-        clusterSources: item.clusterSources,
-        createdAt: new Date().toISOString(),
-      }))
-      await db.insert(digestItems).values(digestRecords)
+        if (oldDigestIds.length > 0) {
+          const idPlaceholders = oldDigestIds.map(() => '?').join(',')
+          db.$client
+            .prepare(`DELETE FROM favorites WHERE digest_item_id IN (${idPlaceholders})`)
+            .run(...oldDigestIds.map(r => r.id))
+        }
 
-      // 同步写入 FTS 索引
-      for (const record of digestRecords) {
-        db.run(sql`INSERT INTO digest_fts (digest_item_id, title, one_liner, summary, source, digest_date)
-          VALUES (${record.id}, ${record.title}, ${record.oneLiner}, ${record.summary}, ${record.source}, ${record.digestDate})`)
-      }
+        db.$client.prepare('DELETE FROM digest_fts WHERE digest_date = ?').run(date)
+        db.$client.prepare('DELETE FROM digest_items WHERE digest_date = ?').run(date)
+
+        // 插入新数据
+        const insertDigest = db.$client.prepare(`
+          INSERT INTO digest_items (id, digest_date, source, title, url, author, ai_score, one_liner, summary, cluster_id, cluster_sources, created_at, is_read)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+        `)
+        const insertFts = db.$client.prepare(`
+          INSERT INTO digest_fts (digest_item_id, title, one_liner, summary, source, digest_date)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `)
+
+        for (const item of summarized) {
+          const id = uuid()
+          const now = new Date().toISOString()
+          insertDigest.run(
+            id, date, item.source, item.title, item.url, item.author || '',
+            item.aiScore, item.oneLiner, item.summary,
+            item.clusterId || null, JSON.stringify(item.clusterSources || []), now
+          )
+          insertFts.run(id, item.title, item.oneLiner, item.summary, item.source, date)
+        }
+      })
+
+      writeDigest()
     }
 
     // 完成

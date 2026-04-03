@@ -3,6 +3,7 @@ import { db } from '@/lib/db/index'
 import { scheduleConfig } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { restartScheduler } from '@/lib/scheduler'
+import { validate as cronValidate } from 'node-cron'
 
 export async function GET() {
   const rows = db.select().from(scheduleConfig).where(eq(scheduleConfig.id, 'default')).all()
@@ -34,6 +35,12 @@ export async function POST(request: Request) {
     telegramChatId?: string
   }
   const now = new Date().toISOString()
+
+  // 校验 cron 表达式
+  if (body.cronExpression && !cronValidate(body.cronExpression)) {
+    return NextResponse.json({ error: `无效的 cron 表达式: ${body.cronExpression}` }, { status: 400 })
+  }
+
   const existing = db.select().from(scheduleConfig).where(eq(scheduleConfig.id, 'default')).all()
 
   if (existing.length === 0) {

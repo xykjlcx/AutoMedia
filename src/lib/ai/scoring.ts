@@ -22,7 +22,7 @@ const INTEREST_DOMAINS = [
 // 批量评分，每批 10 条
 export async function scoreItems(
   items: CollectedItem[],
-  onProgress?: (done: number) => void,
+  onProgress?: (done: number) => Promise<void> | void,
 ): Promise<ScoredItem[]> {
   const results: ScoredItem[] = []
   const batchSize = 20
@@ -75,7 +75,7 @@ ${itemList}`,
       console.error('[scoring] 评分失败，跳过当前批次:', err)
     }
     // 报告进度：已处理到第几条
-    onProgress?.(Math.min(i + batchSize, items.length))
+    await onProgress?.(Math.min(i + batchSize, items.length))
   }
 
   return results
