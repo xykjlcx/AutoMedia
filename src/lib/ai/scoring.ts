@@ -24,17 +24,25 @@ const INTEREST_DOMAINS = [
   '互联网产品 / 创业 / SaaS',
 ]
 
-// 批量评分，每批 10 条
+// 批量评分，每批 20 条，最多 2 路并发
 export async function scoreItems(
   items: CollectedItem[],
   onProgress?: (done: number) => Promise<void> | void,
 ): Promise<ScoreResult> {
   const results: ScoredItem[] = []
   let failedCount = 0
+  let doneCount = 0
   const batchSize = 20
+  const concurrency = 2
 
+  // 切分批次
+  const batches: CollectedItem[][] = []
   for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize)
+    batches.push(items.slice(i, i + batchSize))
+  }
+
+  // 处理单个批次
+  const processBatch = async (batch: CollectedItem[]): Promise<void> => {
     const itemList = batch.map((item, idx) => (
       `[${idx}] 来源:${item.source} | 标题:${item.title}\n内容摘要:${item.content.slice(0, 300)}`
     )).join('\n\n')
@@ -63,7 +71,7 @@ ${itemList}`,
       if (!jsonStr) {
         console.error('[scoring] 无法提取 JSON')
         failedCount += batch.length
-        continue
+        return
       }
 
       const scores: Array<{ index: number; relevance: number; novelty: number; impact: number }> = JSON.parse(jsonStr)
@@ -85,9 +93,19 @@ ${itemList}`,
       console.error('[scoring] 评分失败，跳过当前批次:', err)
       failedCount += batch.length
     }
-    // 报告进度：已处理到第几条
-    await onProgress?.(Math.min(i + batchSize, items.length))
+    doneCount += batch.length
+    await onProgress?.(Math.min(doneCount, items.length))
   }
+
+  // 并发控制：最多 concurrency 个批次同时执行
+  let cursor = 0
+  const runNext = async (): Promise<void> => {
+    while (cursor < batches.length) {
+      const idx = cursor++
+      await processBatch(batches[idx])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, batches.length) }, () => runNext()))
 
   return { items: results, failedCount }
 }

@@ -13,17 +13,25 @@ export interface SummarizeResult {
   failedCount: number
 }
 
-// 批量生成摘要，每批 5 条
+// 批量生成摘要，每批 5 条，最多 2 路并发
 export async function summarizeItems(
   items: ClusteredItem[],
   onProgress?: (done: number) => Promise<void> | void,
 ): Promise<SummarizeResult> {
   const results: SummarizedItem[] = []
   let failedCount = 0
+  let doneCount = 0
   const batchSize = 5
+  const concurrency = 2
 
+  // 切分批次
+  const batches: ClusteredItem[][] = []
   for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize)
+    batches.push(items.slice(i, i + batchSize))
+  }
+
+  // 处理单个批次
+  const processBatch = async (batch: ClusteredItem[]): Promise<void> => {
     const itemList = batch.map((item, idx) => (
       `[${idx}] 来源:${item.source} | 标题:${item.title}\n内容:${item.content.slice(0, 500)}${item.clusterSources.length > 0 ? `\n跨源讨论:${item.clusterSources.join(', ')}` : ''}`
     )).join('\n\n---\n\n')
@@ -46,12 +54,11 @@ ${itemList}`,
 
       const jsonStr = extractJson(text)
       if (!jsonStr) {
-        // fallback
         failedCount += batch.length
         for (const item of batch) {
           results.push({ ...item, oneLiner: item.title.slice(0, 30), summary: item.content.slice(0, 150) })
         }
-        continue
+        return
       }
 
       const summaries: Array<{ index: number; one_liner: string; summary: string }> = JSON.parse(jsonStr)
@@ -71,9 +78,19 @@ ${itemList}`,
         results.push({ ...item, oneLiner: item.title.slice(0, 30), summary: item.content.slice(0, 150) })
       }
     }
-    // 报告进度：已处理到第几条
-    await onProgress?.(Math.min(i + batchSize, items.length))
+    doneCount += batch.length
+    await onProgress?.(Math.min(doneCount, items.length))
   }
+
+  // 并发控制
+  let cursor = 0
+  const runNext = async (): Promise<void> => {
+    while (cursor < batches.length) {
+      const idx = cursor++
+      await processBatch(batches[idx])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, batches.length) }, () => runNext()))
 
   return { items: results, failedCount }
 }

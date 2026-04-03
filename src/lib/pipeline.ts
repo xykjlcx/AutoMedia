@@ -86,30 +86,39 @@ export async function runDigestPipeline(date: string): Promise<string> {
       progress.sources![id] = { ...progress.sources![id], ...patch }
     }
 
+    // 所有源并行采集
     for (const source of publicSources) {
-      try {
-        updateSource(source.id, { status: 'running' })
-        progress.detail = `采集 ${source.name}...`
-        await saveProgress(runId, progress, date)
+      updateSource(source.id, { status: 'running' })
+    }
+    progress.detail = `并行采集 ${publicSources.length} 个源...`
+    await saveProgress(runId, progress, date)
 
+    const collectResults = await Promise.allSettled(
+      publicSources.map(async (source) => {
         const startTime = Date.now()
         const items = await rssCollector.collect(source.id, {
           rssPath: source.rssPath || '',
           rssUrl: source.rssUrl || ''
         })
         const duration = (Date.now() - startTime) / 1000
+        return { sourceId: source.id, items, duration }
+      })
+    )
 
-        allItems.push(...items)
-        updateSource(source.id, { status: 'done', count: items.length, duration })
-        await saveProgress(runId, progress, date)
-      } catch (err) {
-        const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    for (let i = 0; i < collectResults.length; i++) {
+      const result = collectResults[i]
+      const source = publicSources[i]
+      if (result.status === 'fulfilled') {
+        allItems.push(...result.value.items)
+        updateSource(source.id, { status: 'done', count: result.value.items.length, duration: result.value.duration })
+      } else {
+        const msg = result.reason instanceof Error ? `${result.reason.name}: ${result.reason.message}` : String(result.reason)
         errors[source.id] = msg
         updateSource(source.id, { status: 'error', error: msg })
-        await saveProgress(runId, progress, date)
-        console.error(`[pipeline] ${source.name} 采集失败:`, err)
+        console.error(`[pipeline] ${source.name} 采集失败:`, result.reason)
       }
     }
+    await saveProgress(runId, progress, date)
 
     // 私域源标记为待实现
     for (const source of privateSources) {
