@@ -1,6 +1,6 @@
 import { generateObject } from 'ai'
 import { z } from 'zod'
-import { models } from './client'
+import { getModels } from './client'
 import type { ScoredItem } from './scoring'
 
 export interface ClusteredItem extends ScoredItem {
@@ -35,7 +35,7 @@ export async function clusterItems(items: ScoredItem[]): Promise<ClusteredItem[]
 
   try {
     const { object } = await generateObject({
-      model: models.fast,
+      model: getModels().fast,
       schema: clusterSchema,
       prompt: `以下是来自不同平台的资讯标题。请找出讨论同一事件/话题的条目，将它们分组。
 

@@ -1,6 +1,6 @@
 import { generateObject } from 'ai'
 import { z } from 'zod'
-import { models } from './client'
+import { getModels } from './client'
 import type { ClusteredItem } from './clustering'
 
 export interface SummarizedItem extends ClusteredItem {
@@ -27,7 +27,7 @@ export async function summarizeItems(items: ClusteredItem[]): Promise<Summarized
 
     try {
       const { object: summaries } = await generateObject({
-        model: models.quality,
+        model: getModels().quality,
         schema: summarySchema,
         prompt: `你是一个资讯摘要 AI，面向一位关注 AI、跨境电商、技术变革的全栈开发者。
 

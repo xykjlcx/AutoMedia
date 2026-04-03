@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Newspaper, Clock, Star } from "lucide-react"
+import { Newspaper, Clock, Star, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navLinks = [
   { href: "/", label: "今日日报", icon: Newspaper },
   { href: "/history", label: "历史", icon: Clock },
   { href: "/favorites", label: "收藏", icon: Star },
+  { href: "/settings", label: "设置", icon: Settings },
 ]
 
 export function Navbar() {

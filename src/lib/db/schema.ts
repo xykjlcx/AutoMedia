@@ -39,6 +39,17 @@ export const favorites = sqliteTable('favorites', {
   createdAt: text('created_at').notNull(),
 })
 
+// AI 模型配置
+export const aiSettings = sqliteTable('ai_settings', {
+  id: text('id').primaryKey(), // 固定 'default'
+  provider: text('provider').notNull().default('anthropic'), // anthropic | openai-compatible | google
+  baseUrl: text('base_url').default(''), // OpenAI 兼容接口的 base URL
+  apiKey: text('api_key').default(''),
+  fastModel: text('fast_model').notNull().default('claude-haiku-4-5-20251001'), // 评分/聚类用的快速模型
+  qualityModel: text('quality_model').notNull().default('claude-sonnet-4-6'), // 摘要用的高质量模型
+  updatedAt: text('updated_at').notNull(),
+})
+
 // 日报执行记录
 export const digestRuns = sqliteTable('digest_runs', {
   id: text('id').primaryKey(),

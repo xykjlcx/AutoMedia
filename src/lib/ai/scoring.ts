@@ -1,6 +1,6 @@
 import { generateObject } from 'ai'
 import { z } from 'zod'
-import { models } from './client'
+import { getModels } from './client'
 import type { CollectedItem } from '../collectors/types'
 
 export interface ScoredItem extends CollectedItem {
@@ -39,7 +39,7 @@ export async function scoreItems(items: CollectedItem[]): Promise<ScoredItem[]> 
 
     try {
       const { object: scores } = await generateObject({
-        model: models.fast,
+        model: getModels().fast,
         schema: scoreSchema,
         prompt: `你是一个资讯筛选 AI。请对以下资讯条目进行评分。
 
