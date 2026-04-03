@@ -28,6 +28,11 @@ sqlite.exec(`
   );
 `)
 
+// 常用查询索引
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_digest_items_date ON digest_items(digest_date)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_digest_items_source ON digest_items(source)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_raw_items_date ON raw_items(digest_date)`)
+
 export const db = drizzle(sqlite, { schema })
 
 import { seedDefaultSources } from './seed'

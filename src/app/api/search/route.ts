@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db/index'
 import { digestItems } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
-import { sql } from 'drizzle-orm'
+import { inArray, sql } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -23,12 +22,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ results: [] })
     }
 
-    // 按 FTS rank 顺序获取完整的 digest items
-    const items = []
-    for (const row of ftsRows) {
-      const rows = await db.select().from(digestItems).where(eq(digestItems.id, row.digest_item_id))
-      if (rows[0]) items.push(rows[0])
-    }
+    // 批量查询，避免 N+1
+    const ids = ftsRows.map(r => r.digest_item_id)
+    const allItems = await db.select().from(digestItems).where(inArray(digestItems.id, ids))
+
+    // 按 FTS rank 顺序排列
+    const itemMap = new Map(allItems.map(item => [item.id, item]))
+    const items = ftsRows.map(r => itemMap.get(r.digest_item_id)).filter(Boolean)
 
     return NextResponse.json({ results: items, total: items.length })
   } catch (err) {
