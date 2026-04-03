@@ -14,10 +14,9 @@ export const rssCollector: Collector = {
   name: 'rss',
 
   async collect(sourceId: string, config: Record<string, string>): Promise<CollectedItem[]> {
-    const rssPath = config.rssPath
-    if (!rssPath) throw new Error(`RSS path not configured for source: ${sourceId}`)
-
-    const feedUrl = `${RSSHUB_BASE}${rssPath}`
+    // 优先使用完整 URL（自定义 RSS），否则拼接 RSSHub 路径
+    const feedUrl = config.rssUrl || (config.rssPath ? `${RSSHUB_BASE}${config.rssPath}` : '')
+    if (!feedUrl) throw new Error(`RSS path not configured for source: ${sourceId}`)
     const feed = await parser.parseURL(feedUrl)
 
     return (feed.items || []).map(item => ({

@@ -28,6 +28,7 @@ export const digestItems = sqliteTable('digest_items', {
   clusterId: text('cluster_id'),
   clusterSources: text('cluster_sources', { mode: 'json' }).$type<string[]>(),
   createdAt: text('created_at').notNull(),
+  isRead: integer('is_read', { mode: 'boolean' }).default(false),
 })
 
 // 收藏
@@ -61,4 +62,30 @@ export const digestRuns = sqliteTable('digest_runs', {
   startedAt: text('started_at').notNull(),
   completedAt: text('completed_at'),
   errors: text('errors', { mode: 'json' }).$type<Record<string, string>>(),
+})
+
+// 信息源配置
+export const sourceConfigs = sqliteTable('source_configs', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  icon: text('icon').notNull().default('📰'),
+  type: text('type').notNull(), // 'public' | 'private' | 'custom-rss'
+  rssPath: text('rss_path').default(''),
+  rssUrl: text('rss_url').default(''),
+  targetUrl: text('target_url').default(''),
+  enabled: integer('enabled', { mode: 'boolean' }).default(true),
+  maxItems: integer('max_items').default(5),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: text('created_at').notNull(),
+})
+
+// 定时任务配置
+export const scheduleConfig = sqliteTable('schedule_config', {
+  id: text('id').primaryKey(),
+  enabled: integer('enabled', { mode: 'boolean' }).default(false),
+  cronExpression: text('cron_expression').default('0 6 * * *'),
+  telegramEnabled: integer('telegram_enabled', { mode: 'boolean' }).default(false),
+  telegramBotToken: text('telegram_bot_token').default(''),
+  telegramChatId: text('telegram_chat_id').default(''),
+  updatedAt: text('updated_at').notNull(),
 })

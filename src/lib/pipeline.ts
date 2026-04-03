@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import { db } from './db/index'
 import { rawItems, digestItems, digestRuns, favorites } from './db/schema'
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, inArray, sql } from 'drizzle-orm'
 import { getPublicSources, getPrivateSources } from './sources'
 import { rssCollector } from './collectors/rss'
 import { browserCollector } from './collectors/browser'
@@ -54,7 +54,10 @@ export async function runDigestPipeline(date: string): Promise<string> {
     for (const source of publicSources) {
       try {
         await updateProgress(runId, 'collecting', `采集 ${source.name}...`)
-        const items = await rssCollector.collect(source.id, { rssPath: source.rssPath || '' })
+        const items = await rssCollector.collect(source.id, {
+          rssPath: source.rssPath || '',
+          rssUrl: source.rssUrl || ''
+        })
         allItems.push(...items)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
@@ -128,6 +131,8 @@ export async function runDigestPipeline(date: string): Promise<string> {
       if (oldDigestIds.length > 0) {
         await db.delete(favorites).where(inArray(favorites.digestItemId, oldDigestIds))
       }
+      // 清理 FTS 中对应日期的旧数据（在删除 digestItems 之前）
+      db.run(sql`DELETE FROM digest_fts WHERE digest_date = ${date}`)
       await db.delete(digestItems).where(eq(digestItems.digestDate, date))
 
       const digestRecords = summarized.map(item => ({
@@ -145,6 +150,12 @@ export async function runDigestPipeline(date: string): Promise<string> {
         createdAt: new Date().toISOString(),
       }))
       await db.insert(digestItems).values(digestRecords)
+
+      // 同步写入 FTS 索引
+      for (const record of digestRecords) {
+        db.run(sql`INSERT INTO digest_fts (digest_item_id, title, one_liner, summary, source, digest_date)
+          VALUES (${record.id}, ${record.title}, ${record.oneLiner}, ${record.summary}, ${record.source}, ${record.digestDate})`)
+      }
     }
 
     // 完成

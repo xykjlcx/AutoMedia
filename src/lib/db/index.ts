@@ -16,4 +16,19 @@ const sqlite = new Database(dbPath)
 sqlite.pragma('journal_mode = WAL')
 sqlite.pragma('foreign_keys = ON')
 
+// FTS5 全文搜索虚拟表
+sqlite.exec(`
+  CREATE VIRTUAL TABLE IF NOT EXISTS digest_fts USING fts5(
+    digest_item_id UNINDEXED,
+    title,
+    one_liner,
+    summary,
+    source UNINDEXED,
+    digest_date UNINDEXED
+  );
+`)
+
 export const db = drizzle(sqlite, { schema })
+
+import { seedDefaultSources } from './seed'
+seedDefaultSources()
