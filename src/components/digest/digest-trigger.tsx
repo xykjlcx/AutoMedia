@@ -189,6 +189,11 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
   const [progress, setProgress] = useState<PipelineProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+  // 计时器
+  const [elapsed, setElapsed] = useState(0)
+  const [finalElapsed, setFinalElapsed] = useState<number | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const startTimeRef = useRef<number>(0)
 
   // mount 时检查是否有正在运行的 pipeline，有则自动连上 SSE
   useEffect(() => {
@@ -208,6 +213,7 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
     return () => {
       cancelled = true
       eventSourceRef.current?.close()
+      if (timerRef.current) clearInterval(timerRef.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date])
@@ -236,10 +242,14 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
           if (progress.phase === 'completed') {
             setStatus('completed')
             stopSSE()
+            stopTimer()
+            setFinalElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000))
             onComplete()
           } else if (progress.phase === 'failed') {
             setStatus('failed')
             stopSSE()
+            stopTimer()
+            setFinalElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000))
             setError(progress.detail || '生成失败')
           } else {
             setStatus(progress.phase === 'collecting' ? 'collecting' : 'processing')
@@ -255,10 +265,28 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
     }
   }, [date, onComplete, stopSSE])
 
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+  }, [])
+
+  const startTimer = useCallback(() => {
+    stopTimer()
+    startTimeRef.current = Date.now()
+    setElapsed(0)
+    setFinalElapsed(null)
+    timerRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000))
+    }, 1000)
+  }, [stopTimer])
+
   const handleTrigger = async () => {
     setStatus("collecting")
     setProgress(null)
     setError(null)
+    startTimer()
 
     try {
       await fetch("/api/digest/trigger", {
@@ -274,6 +302,12 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
   }
 
   const isRunning = status === "collecting" || status === "processing"
+
+  const formatTime = (s: number) => {
+    const min = Math.floor(s / 60)
+    const sec = s % 60
+    return min > 0 ? `${min}:${sec.toString().padStart(2, '0')}` : `${sec}s`
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 py-4">
@@ -292,6 +326,7 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
           <>
             <Loader2 className="size-4 animate-spin" />
             <span>生成中...</span>
+            <span className="text-xs opacity-60 tabular-nums">{formatTime(elapsed)}</span>
           </>
         ) : (
           <>
@@ -330,6 +365,9 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
         <div className="flex items-center gap-1.5 text-sm text-green-600">
           <CheckCircle2 className="size-4" />
           <span>{progress?.detail || "生成完成"}</span>
+          {finalElapsed != null && (
+            <span className="text-xs text-muted-foreground">（耗时 {formatTime(finalElapsed)}）</span>
+          )}
         </div>
       )}
 

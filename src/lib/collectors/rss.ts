@@ -16,7 +16,7 @@ export const rssCollector: Collector = {
     // 用 fetch 获取 XML（避免 rss-parser 内置 http 模块的 DNS/IPv6 兼容问题）
     const response = await fetch(feedUrl, {
       headers: { 'User-Agent': 'AutoMedia/1.0' },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000),
     })
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${feedUrl}`)
     const xml = await response.text()
