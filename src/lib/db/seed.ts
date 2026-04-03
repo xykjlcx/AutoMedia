@@ -31,6 +31,6 @@ export function seedDefaultSources() {
       enabled: s.enabled !== false,
       maxItems: 5,
       createdAt: now,
-    }).run()
+    }).onConflictDoNothing().run()
   }
 }
