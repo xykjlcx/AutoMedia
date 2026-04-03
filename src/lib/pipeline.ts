@@ -11,6 +11,28 @@ import { summarizeItems } from './ai/summarize'
 import type { CollectedItem } from './collectors/types'
 import { sendDigestNotification } from './notify'
 
+// ── 进度结构定义 ──
+
+export interface SourceProgress {
+  status: 'pending' | 'running' | 'done' | 'error'
+  name: string
+  icon: string
+  count?: number
+  duration?: number
+  error?: string
+}
+
+export interface PipelineProgress {
+  phase: 'collecting' | 'scoring' | 'clustering' | 'summarizing' | 'completed' | 'failed'
+  // 采集阶段每个源的状态
+  sources?: Record<string, SourceProgress>
+  // AI 阶段的统计
+  scoring?: { total: number; done: number; filtered: number }
+  clustering?: { total: number; done: number }
+  summarizing?: { total: number; done: number }
+  detail?: string
+}
+
 // 并发保护：检查当天是否有正在运行的 pipeline
 export async function isDigestRunning(date: string): Promise<boolean> {
   const runs = await db.select().from(digestRuns)
@@ -37,12 +59,27 @@ export async function runDigestPipeline(date: string): Promise<string> {
   const runId = uuid()
   const now = new Date().toISOString()
 
+  // 初始化所有源为 pending
+  const publicSources = getPublicSources()
+  const privateSources = getPrivateSources()
+  const allSources = [...publicSources, ...privateSources]
+  const sourcesProgress: Record<string, SourceProgress> = {}
+  for (const s of allSources) {
+    sourcesProgress[s.id] = { status: 'pending', name: s.name, icon: s.icon }
+  }
+
+  const progress: PipelineProgress = {
+    phase: 'collecting',
+    sources: sourcesProgress,
+    detail: '开始采集...',
+  }
+
   // 创建执行记录
   await db.insert(digestRuns).values({
     id: runId,
     digestDate: date,
     status: 'collecting',
-    progress: { step: 'collecting', detail: '开始采集...' },
+    progress,
     startedAt: now,
   })
 
@@ -51,31 +88,54 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
   try {
     // ── Stage 0: 采集 ──
-    const publicSources = getPublicSources()
+    // 辅助函数：更新源状态时保留 name/icon
+    const updateSource = (id: string, patch: Partial<SourceProgress>) => {
+      progress.sources![id] = { ...progress.sources![id], ...patch }
+    }
+
     for (const source of publicSources) {
       try {
-        await updateProgress(runId, 'collecting', `采集 ${source.name}...`)
+        updateSource(source.id, { status: 'running' })
+        progress.detail = `采集 ${source.name}...`
+        await saveProgress(runId, progress)
+
+        const startTime = Date.now()
         const items = await rssCollector.collect(source.id, {
           rssPath: source.rssPath || '',
           rssUrl: source.rssUrl || ''
         })
+        const duration = (Date.now() - startTime) / 1000
+
         allItems.push(...items)
+        updateSource(source.id, { status: 'done', count: items.length, duration })
+        await saveProgress(runId, progress)
       } catch (err) {
         const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
         errors[source.id] = msg
+        updateSource(source.id, { status: 'error', error: msg })
+        await saveProgress(runId, progress)
         console.error(`[pipeline] ${source.name} 采集失败:`, err)
       }
     }
 
-    const privateSources = getPrivateSources()
     for (const source of privateSources) {
       try {
-        await updateProgress(runId, 'collecting', `采集 ${source.name}...`)
+        updateSource(source.id, { status: 'running' })
+        progress.detail = `采集 ${source.name}...`
+        await saveProgress(runId, progress)
+
+        const startTime = Date.now()
         const items = await browserCollector.collect(source.id, { targetUrl: source.targetUrl || '' })
+        const duration = (Date.now() - startTime) / 1000
+
         allItems.push(...items)
+        updateSource(source.id, { status: 'done', count: items.length, duration })
+        await saveProgress(runId, progress)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         errors[source.id] = msg
+        updateSource(source.id, { status: 'error', error: msg })
+        await saveProgress(runId, progress)
       }
     }
 
@@ -103,24 +163,51 @@ export async function runDigestPipeline(date: string): Promise<string> {
       }
     }
 
+    // ── Stage 1: AI 评分筛选 ──
+    progress.phase = 'scoring'
+    progress.scoring = { total: allItems.length, done: 0, filtered: 0 }
+    progress.detail = 'AI 评分筛选中...'
     await db.update(digestRuns).set({
       rawCount: allItems.length,
-      progress: { step: 'processing', detail: `采集完成，共 ${allItems.length} 条，开始 AI 处理...` },
+      progress,
       status: 'processing',
     }).where(eq(digestRuns.id, runId))
 
-    // ── Stage 1: AI 评分筛选 ──
-    await updateProgress(runId, 'processing', 'AI 评分筛选中...')
-    const scored = await scoreItems(allItems)
+    const scored = await scoreItems(allItems, (done) => {
+      progress.scoring!.done = done
+      progress.detail = `已评分 ${done}/${allItems.length} 条`
+      saveProgress(runId, progress)
+    })
     const filtered = filterTopItems(scored)
+    progress.scoring!.done = allItems.length
+    progress.scoring!.filtered = filtered.length
+    progress.detail = `评分完成，筛选出 ${filtered.length} 条`
+    await saveProgress(runId, progress)
 
     // ── Stage 2: 跨源去重 ──
-    await updateProgress(runId, 'processing', '跨源去重中...')
+    progress.phase = 'clustering'
+    progress.clustering = { total: filtered.length, done: 0 }
+    progress.detail = '跨源去重中...'
+    await saveProgress(runId, progress)
+
     const clustered = await clusterItems(filtered)
+    progress.clustering!.done = filtered.length
+    progress.detail = `去重完成，剩余 ${clustered.length} 条`
+    await saveProgress(runId, progress)
 
     // ── Stage 3: AI 摘要生成 ──
-    await updateProgress(runId, 'processing', 'AI 摘要生成中...')
-    const summarized = await summarizeItems(clustered)
+    progress.phase = 'summarizing'
+    progress.summarizing = { total: clustered.length, done: 0 }
+    progress.detail = 'AI 摘要生成中...'
+    await saveProgress(runId, progress)
+
+    const summarized = await summarizeItems(clustered, (done) => {
+      progress.summarizing!.done = done
+      progress.detail = `已生成 ${done}/${clustered.length} 条摘要`
+      saveProgress(runId, progress)
+    })
+    progress.summarizing!.done = clustered.length
+    await saveProgress(runId, progress)
 
     // 写入精选数据
     if (summarized.length > 0) {
@@ -160,11 +247,19 @@ export async function runDigestPipeline(date: string): Promise<string> {
     }
 
     // 完成
+    const completedProgress: PipelineProgress = {
+      phase: 'completed',
+      sources: progress.sources,
+      scoring: progress.scoring,
+      clustering: progress.clustering,
+      summarizing: progress.summarizing,
+      detail: `完成！共 ${summarized.length} 条精选`,
+    }
     await db.update(digestRuns).set({
       status: 'completed',
       filteredCount: summarized.length,
       completedAt: new Date().toISOString(),
-      progress: { step: 'completed', detail: `完成！共 ${summarized.length} 条精选` },
+      progress: completedProgress,
       errors: Object.keys(errors).length > 0 ? errors : null,
     }).where(eq(digestRuns.id, runId))
 
@@ -175,10 +270,18 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
+    const failedProgress: PipelineProgress = {
+      phase: 'failed',
+      sources: progress.sources,
+      scoring: progress.scoring,
+      clustering: progress.clustering,
+      summarizing: progress.summarizing,
+      detail: msg,
+    }
     await db.update(digestRuns).set({
       status: 'failed',
       completedAt: new Date().toISOString(),
-      progress: { step: 'failed', detail: msg },
+      progress: failedProgress,
       errors: { ...errors, pipeline: msg },
     }).where(eq(digestRuns.id, runId))
   }
@@ -186,8 +289,8 @@ export async function runDigestPipeline(date: string): Promise<string> {
   return runId
 }
 
-async function updateProgress(runId: string, status: string, detail: string) {
+async function saveProgress(runId: string, progress: PipelineProgress) {
   await db.update(digestRuns).set({
-    progress: { step: status, detail },
+    progress: { ...progress },
   }).where(eq(digestRuns.id, runId))
 }

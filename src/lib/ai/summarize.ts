@@ -18,7 +18,10 @@ function extractJson(text: string): string | null {
 }
 
 // 批量生成摘要，每批 5 条
-export async function summarizeItems(items: ClusteredItem[]): Promise<SummarizedItem[]> {
+export async function summarizeItems(
+  items: ClusteredItem[],
+  onProgress?: (done: number) => void,
+): Promise<SummarizedItem[]> {
   const results: SummarizedItem[] = []
   const batchSize = 5
 
@@ -69,6 +72,8 @@ ${itemList}`,
         results.push({ ...item, oneLiner: item.title.slice(0, 30), summary: item.content.slice(0, 150) })
       }
     }
+    // 报告进度：已处理到第几条
+    onProgress?.(Math.min(i + batchSize, items.length))
   }
 
   return results
