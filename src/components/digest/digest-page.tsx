@@ -74,6 +74,10 @@ export function DigestPage() {
     (sum, s) => sum + (data?.groups[s]?.length || 0),
     0
   )
+  const unreadCount = sortedSources.reduce(
+    (sum, s) => sum + (data?.groups[s]?.filter(item => item.isRead !== true).length || 0),
+    0
+  )
 
   // 计算每个分组的起始动画索引
   let runningIndex = 0
@@ -114,6 +118,9 @@ export function DigestPage() {
         <div className="mt-6">
           <p className="text-xs text-muted-foreground mb-6">
             共 {totalItems} 条精选，来自 {sortedSources.length} 个信息源
+            {unreadCount > 0 && (
+              <span className="ml-1 text-[var(--color-warm-accent)]">（{unreadCount} 条未读）</span>
+            )}
           </p>
           {sortedSources.map(source => {
             const items = data!.groups[source]

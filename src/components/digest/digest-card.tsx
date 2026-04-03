@@ -20,6 +20,7 @@ export interface DigestItem {
   clusterSources: string[] | null
   isFavorited: boolean
   favoriteId?: string
+  isRead?: boolean
 }
 
 interface DigestCardProps {
@@ -29,6 +30,7 @@ interface DigestCardProps {
 
 export function DigestCard({ item, index = 0 }: DigestCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const [isRead, setIsRead] = useState(item.isRead ?? false)
   const sourceColor = SOURCE_COLORS[item.source] || "#9C9590"
   const sourceMeta = SOURCE_META[item.source]
 
@@ -53,6 +55,13 @@ export function DigestCard({ item, index = 0 }: DigestCardProps) {
         {/* 头部：来源 + 收藏 */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
+            {/* 未读小圆点 */}
+            {!isRead && (
+              <span
+                className="shrink-0 rounded-full"
+                style={{ width: 6, height: 6, backgroundColor: "var(--color-warm-accent)" }}
+              />
+            )}
             {sourceMeta && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <span>{sourceMeta.icon}</span>
@@ -102,7 +111,19 @@ export function DigestCard({ item, index = 0 }: DigestCardProps) {
 
         {/* 详细摘要（可展开） */}
         <button
-          onClick={() => setExpanded(!expanded)}
+          onClick={async () => {
+            const next = !expanded
+            setExpanded(next)
+            // 展开时标记已读
+            if (next && !isRead) {
+              setIsRead(true)
+              await fetch("/api/digest/read", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ids: [item.id] }),
+              })
+            }
+          }}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <span>{expanded ? "收起详情" : "展开详情"}</span>
