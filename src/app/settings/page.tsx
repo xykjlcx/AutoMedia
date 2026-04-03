@@ -15,6 +15,7 @@ interface TestResult {
   duration?: number
   usage?: { promptTokens: number; completionTokens: number }
   debug?: { provider: string; baseUrl: string; hasApiKey: boolean; apiKeyPrefix: string }
+  resultKeys?: string[]
 }
 
 function ModelTestDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -198,9 +199,10 @@ function TestResultCard({ label, icon, testing, result }: {
 
           {/* 耗时和 token */}
           {result?.success && (
-            <div className="flex gap-4 text-xs text-muted-foreground pt-1">
+            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-1">
               {result.duration && <span>耗时 {(result.duration / 1000).toFixed(1)}s</span>}
-              {result.usage && <span>Token: {result.usage.promptTokens} → {result.usage.completionTokens}</span>}
+              {result.usage && <span>Token: {result.usage.promptTokens || '?'} → {result.usage.completionTokens || '?'}</span>}
+              {result.resultKeys && <span className="opacity-60">keys: {result.resultKeys.join(', ')}</span>}
             </div>
           )}
         </div>

@@ -41,13 +41,36 @@ export async function POST(request: Request) {
     })
     const duration = Date.now() - startTime
 
+    // result.text 可能为空（某些兼容 API 的响应格式略有差异）
+    // 尝试多种方式提取回复文本
+    let replyText = result.text || ''
+    if (!replyText && result.response) {
+      // 从原始响应中提取
+      const resp = result.response as Record<string, unknown>
+      if (resp.messages && Array.isArray(resp.messages)) {
+        const lastMsg = resp.messages[resp.messages.length - 1] as Record<string, unknown>
+        if (lastMsg?.content) {
+          if (typeof lastMsg.content === 'string') {
+            replyText = lastMsg.content
+          } else if (Array.isArray(lastMsg.content)) {
+            replyText = (lastMsg.content as Array<Record<string, string>>)
+              .filter(b => b.type === 'text')
+              .map(b => b.text)
+              .join('')
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       modelName,
       prompt,
-      reply: result.text,
+      reply: replyText || '(模型返回了空内容)',
       duration,
       usage: result.usage,
+      // 临时调试：返回 result 的 key 列表
+      resultKeys: Object.keys(result),
     })
   } catch (err: unknown) {
     // 提取更详细的错误信息
