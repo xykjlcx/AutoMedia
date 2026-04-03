@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Newspaper, Clock, Star, BarChart3, Search, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -24,8 +23,8 @@ export function Navbar() {
       <div className="mx-auto max-w-6xl h-full flex items-center justify-between px-4">
         {/* 报头 */}
         <Link href="/" className="flex items-center gap-2 group shrink-0">
-          <Image
-            src="/logo-icon.png"
+          <img
+            src="/logo.png"
             alt="AutoMedia"
             width={28}
             height={28}
