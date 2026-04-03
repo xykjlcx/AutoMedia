@@ -1,20 +1,11 @@
 import { generateText } from 'ai'
 import { getModels } from './client'
+import { extractJson } from './utils'
 import type { ScoredItem } from './scoring'
 
 export interface ClusteredItem extends ScoredItem {
   clusterId: string
   clusterSources: string[]
-}
-
-// 从 AI 回复中提取 JSON
-function extractJson(text: string): string | null {
-  const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (codeBlock) return codeBlock[1].trim()
-  const brace = text.indexOf('{')
-  const lastBrace = text.lastIndexOf('}')
-  if (brace !== -1 && lastBrace > brace) return text.slice(brace, lastBrace + 1)
-  return null
 }
 
 // 用 AI 判断哪些条目在讨论同一件事

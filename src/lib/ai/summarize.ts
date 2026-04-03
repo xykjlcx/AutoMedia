@@ -1,20 +1,11 @@
 import { generateText } from 'ai'
 import { getModels } from './client'
+import { extractJson } from './utils'
 import type { ClusteredItem } from './clustering'
 
 export interface SummarizedItem extends ClusteredItem {
   oneLiner: string
   summary: string
-}
-
-// 从 AI 回复中提取 JSON
-function extractJson(text: string): string | null {
-  const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (codeBlock) return codeBlock[1].trim()
-  const bracket = text.indexOf('[')
-  const lastBracket = text.lastIndexOf(']')
-  if (bracket !== -1 && lastBracket > bracket) return text.slice(bracket, lastBracket + 1)
-  return null
 }
 
 // 批量生成摘要，每批 5 条

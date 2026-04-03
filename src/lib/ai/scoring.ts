@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import { getModels } from './client'
+import { extractJson } from './utils'
 import type { CollectedItem } from '../collectors/types'
 
 export interface ScoredItem extends CollectedItem {
@@ -17,21 +18,6 @@ const INTEREST_DOMAINS = [
   '技术变革 / 开发者工具 / 开源',
   '互联网产品 / 创业 / SaaS',
 ]
-
-// 从 AI 回复中提取 JSON
-function extractJson(text: string): string | null {
-  // 尝试提取 ```json ... ``` 代码块
-  const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (codeBlock) return codeBlock[1].trim()
-  // 尝试找 [ ... ] 或 { ... }
-  const bracket = text.indexOf('[')
-  const lastBracket = text.lastIndexOf(']')
-  if (bracket !== -1 && lastBracket > bracket) return text.slice(bracket, lastBracket + 1)
-  const brace = text.indexOf('{')
-  const lastBrace = text.lastIndexOf('}')
-  if (brace !== -1 && lastBrace > brace) return text.slice(brace, lastBrace + 1)
-  return null
-}
 
 // 批量评分，每批 10 条
 export async function scoreItems(
@@ -95,22 +81,3 @@ ${itemList}`,
   return results
 }
 
-// 按源分组，每源取 top 5，且分数 >= 5（降低阈值保留更多内容）
-export function filterTopItems(items: ScoredItem[], maxPerSource = 5, minScore = 5): ScoredItem[] {
-  const bySource = new Map<string, ScoredItem[]>()
-
-  for (const item of items) {
-    if (item.aiScore < minScore) continue
-    const list = bySource.get(item.source) || []
-    list.push(item)
-    bySource.set(item.source, list)
-  }
-
-  const result: ScoredItem[] = []
-  for (const [, list] of bySource) {
-    list.sort((a, b) => b.aiScore - a.aiScore)
-    result.push(...list.slice(0, maxPerSource))
-  }
-
-  return result
-}
