@@ -32,6 +32,7 @@ sqlite.exec(`
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_digest_items_date ON digest_items(digest_date)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_digest_items_source ON digest_items(source)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_raw_items_date ON raw_items(digest_date)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_ratings_item ON user_ratings(digest_item_id)`)
 
 export const db = drizzle(sqlite, { schema })
 

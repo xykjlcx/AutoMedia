@@ -29,6 +29,7 @@ export const digestItems = sqliteTable('digest_items', {
   clusterSources: text('cluster_sources', { mode: 'json' }).$type<string[]>(),
   createdAt: text('created_at').notNull(),
   isRead: integer('is_read', { mode: 'boolean' }).default(false),
+  trendTag: text('trend_tag'), // 趋势标签
 })
 
 // 收藏
@@ -77,6 +78,22 @@ export const sourceConfigs = sqliteTable('source_configs', {
   maxItems: integer('max_items').default(5),
   sortOrder: integer('sort_order').default(0),
   createdAt: text('created_at').notNull(),
+})
+
+// 用户评价
+export const userRatings = sqliteTable('user_ratings', {
+  id: text('id').primaryKey(),
+  digestItemId: text('digest_item_id').notNull().references(() => digestItems.id),
+  rating: text('rating').notNull(), // 'like' | 'dislike'
+  createdAt: text('created_at').notNull(),
+})
+
+// 用户偏好画像（AI 生成的摘要）
+export const userProfile = sqliteTable('user_profile', {
+  id: text('id').primaryKey(), // 固定 'default'
+  profile: text('profile').notNull(), // AI 生成的偏好描述
+  ratingCount: integer('rating_count').default(0),
+  updatedAt: text('updated_at').notNull(),
 })
 
 // 定时任务配置
