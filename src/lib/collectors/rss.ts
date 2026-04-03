@@ -8,7 +8,7 @@ const parser = new Parser({
   },
 })
 
-const RSSHUB_BASE = process.env.RSSHUB_BASE_URL || 'http://localhost:1200'
+const RSSHUB_BASE = process.env.RSSHUB_BASE_URL || 'https://rsshub.rssforever.com'
 
 export const rssCollector: Collector = {
   name: 'rss',
