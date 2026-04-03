@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
+import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +27,21 @@ interface SourceConfig {
   sortOrder: number
   createdAt: string
 }
+
+interface ScheduleData {
+  enabled: boolean
+  cronExpression: string
+  telegramEnabled: boolean
+  telegramBotToken: string
+  telegramChatId: string
+}
+
+const CRON_PRESETS = [
+  { label: "每天 6:00", value: "0 6 * * *" },
+  { label: "每天 7:00", value: "0 7 * * *" },
+  { label: "每天 8:00", value: "0 8 * * *" },
+  { label: "每 12 小时", value: "0 */12 * * *" },
+]
 
 const PROVIDERS = [
   {
@@ -323,6 +338,20 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [schedule, setSchedule] = useState<ScheduleData>({
+    enabled: false,
+    cronExpression: "0 6 * * *",
+    telegramEnabled: false,
+    telegramBotToken: "",
+    telegramChatId: "",
+  })
+  const [scheduleLoading, setScheduleLoading] = useState(true)
+  const [scheduleSaving, setScheduleSaving] = useState(false)
+  const [scheduleSaved, setScheduleSaved] = useState(false)
+  const [scheduleError, setScheduleError] = useState<string | null>(null)
+  const [testSending, setTestSending] = useState(false)
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null)
+
   useEffect(() => {
     fetch("/api/settings")
       .then(r => r.json())
@@ -331,6 +360,16 @@ export default function SettingsPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetch("/api/settings/schedule")
+      .then(r => r.json())
+      .then((data: ScheduleData) => {
+        setSchedule(data)
+        setScheduleLoading(false)
+      })
+      .catch(() => setScheduleLoading(false))
   }, [])
 
   const currentProvider = PROVIDERS.find(p => p.id === settings.provider) || PROVIDERS[0]
@@ -379,7 +418,51 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) {
+  const handleScheduleSave = async () => {
+    setScheduleSaving(true)
+    setScheduleError(null)
+    setScheduleSaved(false)
+
+    try {
+      const res = await fetch("/api/settings/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(schedule),
+      })
+      if (!res.ok) throw new Error("保存失败")
+      setScheduleSaved(true)
+      // 重新获取（拿脱敏后的 token）
+      const data = await fetch("/api/settings/schedule").then(r => r.json())
+      setSchedule(data)
+    } catch (err) {
+      setScheduleError(err instanceof Error ? err.message : "保存失败")
+    } finally {
+      setScheduleSaving(false)
+    }
+  }
+
+  const handleTestTelegram = async () => {
+    setTestSending(true)
+    setTestResult(null)
+    try {
+      const res = await fetch("/api/settings/schedule/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegramBotToken: schedule.telegramBotToken,
+          telegramChatId: schedule.telegramChatId,
+        }),
+      })
+      const data = await res.json() as { success: boolean; error?: string }
+      setTestResult({ ok: data.success, msg: data.success ? "发送成功" : (data.error ?? "发送失败") })
+    } catch {
+      setTestResult({ ok: false, msg: "发送失败" })
+    } finally {
+      setTestSending(false)
+    }
+  }
+
+  if (loading || scheduleLoading) {
     return (
       <div className="mx-auto max-w-[720px] px-4 pb-16">
         <div className="py-6 text-center">
@@ -584,6 +667,179 @@ export default function SettingsPage() {
             </span>
           )}
         </div>
+
+        <Separator />
+
+        {/* ─── 定时生成 ─── */}
+        <section>
+          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-6">
+            <Clock className="size-4" />
+            定时生成
+          </h2>
+
+          <div className="space-y-6">
+            {/* 启用开关 */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">启用定时生成</p>
+                <p className="text-xs text-muted-foreground mt-0.5">按计划自动生成每日日报</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={schedule.enabled}
+                onClick={() => { setSchedule(prev => ({ ...prev, enabled: !prev.enabled })); setScheduleSaved(false) }}
+                className={cn(
+                  "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30",
+                  schedule.enabled ? "bg-[var(--color-warm-accent)]" : "bg-muted"
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform",
+                    schedule.enabled ? "translate-x-5" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Cron 表达式 */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">执行时间</label>
+              <input
+                type="text"
+                value={schedule.cronExpression}
+                onChange={e => { setSchedule(prev => ({ ...prev, cronExpression: e.target.value })); setScheduleSaved(false) }}
+                placeholder="0 6 * * *"
+                className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+              />
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {CRON_PRESETS.map(preset => (
+                  <button
+                    key={preset.value}
+                    onClick={() => { setSchedule(prev => ({ ...prev, cronExpression: preset.value })); setScheduleSaved(false) }}
+                    className={cn(
+                      "px-2 py-0.5 rounded text-xs transition-colors",
+                      schedule.cronExpression === preset.value
+                        ? "bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)] font-medium"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                标准 cron 格式：分 时 日 月 周（服务器本地时间）
+              </p>
+            </div>
+
+            {/* Telegram 通知 */}
+            <div className="p-4 rounded-lg border border-border/60 bg-card space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bell className="size-4 text-blue-500" />
+                  <span className="text-sm font-medium text-foreground">Telegram 通知</span>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={schedule.telegramEnabled}
+                  onClick={() => { setSchedule(prev => ({ ...prev, telegramEnabled: !prev.telegramEnabled })); setScheduleSaved(false) }}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30",
+                    schedule.telegramEnabled ? "bg-[var(--color-warm-accent)]" : "bg-muted"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform",
+                      schedule.telegramEnabled ? "translate-x-5" : "translate-x-0"
+                    )}
+                  />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Bot Token</label>
+                  <input
+                    type="password"
+                    value={schedule.telegramBotToken}
+                    onChange={e => { setSchedule(prev => ({ ...prev, telegramBotToken: e.target.value })); setScheduleSaved(false) }}
+                    placeholder="123456:ABC-DEF..."
+                    className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Chat ID</label>
+                  <input
+                    type="text"
+                    value={schedule.telegramChatId}
+                    onChange={e => { setSchedule(prev => ({ ...prev, telegramChatId: e.target.value })); setScheduleSaved(false) }}
+                    placeholder="-1001234567890"
+                    className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    onClick={handleTestTelegram}
+                    disabled={testSending || !schedule.telegramChatId}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
+                      "border-border/60 bg-background hover:bg-muted active:scale-[0.98]",
+                      (testSending || !schedule.telegramChatId) && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <Send className="size-3" />
+                    {testSending ? "发送中..." : "发送测试"}
+                  </button>
+
+                  {testResult && (
+                    <span className={cn(
+                      "inline-flex items-center gap-1 text-xs",
+                      testResult.ok ? "text-green-600" : "text-destructive"
+                    )}>
+                      {testResult.ok
+                        ? <Check className="size-3" />
+                        : <AlertCircle className="size-3" />
+                      }
+                      {testResult.msg}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 保存按钮 */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleScheduleSave}
+                disabled={scheduleSaving}
+                className={cn(
+                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
+                  "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
+                  scheduleSaving && "opacity-60 cursor-wait"
+                )}
+              >
+                {scheduleSaving ? "保存中..." : "保存设置"}
+              </button>
+
+              {scheduleSaved && (
+                <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                  <Check className="size-4" />
+                  已保存
+                </span>
+              )}
+
+              {scheduleError && (
+                <span className="inline-flex items-center gap-1 text-sm text-destructive">
+                  <AlertCircle className="size-4" />
+                  {scheduleError}
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   )

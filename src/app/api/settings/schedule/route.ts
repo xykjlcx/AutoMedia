@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db/index'
 import { scheduleConfig } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { restartScheduler } from '@/lib/scheduler'
 
 export async function GET() {
   const rows = db.select().from(scheduleConfig).where(eq(scheduleConfig.id, 'default')).all()
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
     if (body.telegramChatId !== undefined) updates.telegramChatId = body.telegramChatId
     await db.update(scheduleConfig).set(updates).where(eq(scheduleConfig.id, 'default'))
   }
+  restartScheduler()
   return NextResponse.json({ success: true })
 }
 
