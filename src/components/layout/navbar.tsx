@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Newspaper, Clock, Star, BarChart3, Search, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -20,10 +21,17 @@ export function Navbar() {
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 h-14 border-b border-border/60 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto max-w-[720px] h-full flex items-center justify-between px-4">
+      <div className="mx-auto max-w-6xl h-full flex items-center justify-between px-4">
         {/* 报头 */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="font-serif-display text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-[var(--color-warm-accent)]">
+        <Link href="/" className="flex items-center gap-2 group shrink-0">
+          <Image
+            src="/logo-icon.png"
+            alt="AutoMedia"
+            width={28}
+            height={28}
+            className="transition-transform group-hover:scale-105"
+          />
+          <span className="font-serif-display text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-[var(--color-warm-accent)] hidden sm:inline">
             AutoMedia
           </span>
         </Link>
