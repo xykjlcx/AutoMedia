@@ -190,12 +190,27 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
   const [error, setError] = useState<string | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
 
-  // 清理 SSE 连接
+  // mount 时检查是否有正在运行的 pipeline，有则自动连上 SSE
   useEffect(() => {
+    let cancelled = false
+    fetch(`/api/digest/status?date=${date}`)
+      .then(res => res.json())
+      .then(data => {
+        if (cancelled) return
+        if (data.status === 'collecting' || data.status === 'processing') {
+          // 正在运行，恢复状态并连上 SSE
+          setStatus(data.status)
+          if (data.progress) setProgress(data.progress)
+          startSSE()
+        }
+      })
+      .catch(() => {})
     return () => {
+      cancelled = true
       eventSourceRef.current?.close()
     }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date])
 
   const stopSSE = useCallback(() => {
     if (eventSourceRef.current) {
