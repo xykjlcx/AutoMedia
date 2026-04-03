@@ -35,5 +35,6 @@ sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_raw_items_date ON raw_items(digest_d
 
 export const db = drizzle(sqlite, { schema })
 
-import { seedDefaultSources } from './seed'
+import { seedDefaultSources, migrateRssSources } from './seed'
 seedDefaultSources()
+migrateRssSources()

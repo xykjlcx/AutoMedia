@@ -131,6 +131,9 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --color-warm-accent: #D4A843;
+  --color-warm-accent-hover: #C49A38;
+  --color-warm-gold: #E8C064;
 }
 
 @layer base {

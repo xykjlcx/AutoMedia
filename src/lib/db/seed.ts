@@ -1,11 +1,12 @@
+import { eq } from 'drizzle-orm'
 import { db } from './index'
 import { sourceConfigs } from './schema'
 
 const DEFAULT_SOURCES = [
   { id: 'github', name: 'GitHub Trending', icon: '💻', type: 'public' as const, rssPath: '/github/trending/daily/any', sortOrder: 0 },
-  { id: 'juejin', name: '掘金', icon: '⛏️', type: 'public' as const, rssPath: '/juejin/trending/all/daily', sortOrder: 1 },
+  { id: '36kr', name: '36氪', icon: '📊', type: 'public' as const, rssPath: '/36kr/newsflashes', sortOrder: 1 },
   { id: 'zhihu', name: '知乎热榜', icon: '🔍', type: 'public' as const, rssPath: '/zhihu/hot', sortOrder: 2 },
-  { id: 'producthunt', name: 'Product Hunt', icon: '🚀', type: 'public' as const, rssPath: '/producthunt/today', sortOrder: 3 },
+  { id: 'sspai', name: '少数派', icon: '📱', type: 'public' as const, rssPath: '/sspai/index', sortOrder: 3 },
   { id: 'hackernews', name: 'Hacker News', icon: '📰', type: 'public' as const, rssPath: '/hackernews/best', sortOrder: 4 },
   { id: 'twitter', name: 'Twitter', icon: '🐦', type: 'private' as const, targetUrl: 'https://x.com/home', enabled: false, sortOrder: 5 },
   { id: 'xiaohongshu', name: '小红书', icon: '📕', type: 'private' as const, targetUrl: 'https://www.xiaohongshu.com/explore', enabled: false, sortOrder: 6 },
@@ -32,5 +33,32 @@ export function seedDefaultSources() {
       maxItems: 5,
       createdAt: now,
     }).onConflictDoNothing().run()
+  }
+}
+
+// 迁移：替换不可用的 RSS 源
+export function migrateRssSources() {
+  try {
+    const now = new Date().toISOString()
+    // 添加新源（如果不存在）
+    const newSources = [
+      { id: '36kr', name: '36氪', icon: '📊', type: 'public', rssPath: '/36kr/newsflashes', sortOrder: 1 },
+      { id: 'sspai', name: '少数派', icon: '📱', type: 'public', rssPath: '/sspai/index', sortOrder: 3 },
+    ]
+    for (const s of newSources) {
+      db.insert(sourceConfigs).values({
+        ...s,
+        rssUrl: '',
+        targetUrl: '',
+        enabled: true,
+        maxItems: 5,
+        createdAt: now,
+      }).onConflictDoNothing().run()
+    }
+    // 禁用不可用的源
+    db.update(sourceConfigs).set({ enabled: false }).where(eq(sourceConfigs.id, 'juejin')).run()
+    db.update(sourceConfigs).set({ enabled: false }).where(eq(sourceConfigs.id, 'producthunt')).run()
+  } catch {
+    // 静默失败
   }
 }

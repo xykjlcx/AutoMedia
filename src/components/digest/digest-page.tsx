@@ -149,6 +149,39 @@ export function DigestPage() {
               <span className="text-xs opacity-60">{totalAll}</span>
             </button>
           </div>
+          {/* 小屏来源筛选（侧边栏替代） */}
+          {availableSources.length > 0 && (
+            <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1 lg:hidden">
+              <button
+                onClick={() => setSelectedSource(null)}
+                className={cn(
+                  "shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                  selectedSource === null
+                    ? "bg-[var(--color-warm-accent)] text-white"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                )}
+              >
+                全部
+              </button>
+              {availableSources.map(([source, count]) => {
+                const meta = SOURCE_META[source]
+                return (
+                  <button
+                    key={source}
+                    onClick={() => setSelectedSource(selectedSource === source ? null : source)}
+                    className={cn(
+                      "shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                      selectedSource === source
+                        ? "bg-[var(--color-warm-accent)] text-white"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {meta?.name || source} {count}
+                  </button>
+                )
+              })}
+            </div>
+          )}
           </div>
 
           {/* 侧边栏 + 内容区 */}
@@ -214,7 +247,7 @@ export function DigestPage() {
               </p>
 
               {/* 双列卡片网格 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 {sortedItems.map((item, i) => (
                   <DigestCard key={item.id} item={item} index={i} />
                 ))}

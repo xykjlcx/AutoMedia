@@ -96,7 +96,7 @@ export function DigestCard({ item, index = 0 }: DigestCardProps) {
         </h3>
 
         {/* 一句话概述 */}
-        <p className="text-sm text-[#6B6560] leading-relaxed mb-2">
+        <p className="text-sm text-muted-foreground leading-relaxed mb-2">
           {item.oneLiner}
         </p>
 
@@ -138,7 +138,7 @@ export function DigestCard({ item, index = 0 }: DigestCardProps) {
 
         <div className={cn("summary-expand mt-2", expanded && "expanded")}>
           <div>
-            <div className="text-sm text-[#6B6560] leading-relaxed pb-1 whitespace-pre-line">
+            <div className="text-sm text-muted-foreground leading-relaxed pb-1 whitespace-pre-line">
               {item.summary}
             </div>
           </div>

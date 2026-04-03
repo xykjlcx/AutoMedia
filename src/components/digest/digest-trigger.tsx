@@ -329,7 +329,7 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
       {status === "completed" && (
         <div className="flex items-center gap-1.5 text-sm text-green-600">
           <CheckCircle2 className="size-4" />
-          <span>生成完成</span>
+          <span>{progress?.detail || "生成完成"}</span>
         </div>
       )}
 
