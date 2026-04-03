@@ -196,46 +196,57 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
   const [status, setStatus] = useState<RunStatus>("none")
   const [progress, setProgress] = useState<PipelineProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
-  // 清理轮询
+  // 清理 SSE 连接
   useEffect(() => {
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current)
+      eventSourceRef.current?.close()
     }
   }, [])
 
-  const stopPolling = useCallback(() => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
+  const stopSSE = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
     }
   }, [])
 
-  const startPolling = useCallback(() => {
-    stopPolling()
-    pollingRef.current = setInterval(async () => {
+  const startSSE = useCallback(() => {
+    stopSSE()
+    const es = new EventSource(`/api/digest/stream?date=${date}`)
+    eventSourceRef.current = es
+
+    es.onmessage = (event) => {
       try {
-        const res = await fetch(`/api/digest/status?date=${date}`)
-        const data: StatusResponse = await res.json()
-        setStatus(data.status)
-        if (data.progress) setProgress(data.progress)
+        const data = JSON.parse(event.data)
+        if (data.type === 'status' && data.status === 'none') return
 
-        if (data.status === "completed") {
-          stopPolling()
-          onComplete()
-        } else if (data.status === "failed") {
-          stopPolling()
-          const errMsg = data.errors
-            ? Object.values(data.errors).join("; ")
-            : "生成失败"
-          setError(errMsg)
+        if (data.progress) {
+          const progress = data.progress as PipelineProgress
+          setProgress(progress)
+
+          if (progress.phase === 'completed') {
+            setStatus('completed')
+            stopSSE()
+            onComplete()
+          } else if (progress.phase === 'failed') {
+            setStatus('failed')
+            stopSSE()
+            setError(progress.detail || '生成失败')
+          } else {
+            setStatus(progress.phase === 'collecting' ? 'collecting' : 'processing')
+          }
         }
       } catch {
-        // 网络错误继续轮询
+        // 忽略解析错误
       }
-    }, 2000)
-  }, [date, onComplete, stopPolling])
+    }
+
+    es.onerror = () => {
+      // SSE 自动重连，但如果已完成则关闭
+    }
+  }, [date, onComplete, stopSSE])
 
   const handleTrigger = async () => {
     setStatus("collecting")
@@ -248,7 +259,7 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date }),
       })
-      startPolling()
+      startSSE()
     } catch {
       setStatus("failed")
       setError("请求失败，请检查网络")
