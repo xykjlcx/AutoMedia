@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db/index'
 import { aiSettings } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { clearModelCache } from '@/lib/ai/client'
 
 export async function GET() {
   try {
@@ -72,6 +73,7 @@ export async function POST(request: Request) {
       }).where(eq(aiSettings.id, 'default'))
     }
 
+    clearModelCache()
     return NextResponse.json({ success: true })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

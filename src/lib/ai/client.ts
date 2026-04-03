@@ -60,11 +60,29 @@ function createModel(config: AIConfig, modelName: string): LanguageModel {
   return provider(modelName)
 }
 
-// 获取当前配置的模型
+// 模块级缓存，避免每次调用重新创建实例
+let cachedModels: { fast: LanguageModel; quality: LanguageModel } | null = null
+let cachedConfigHash: string | null = null
+
+// 获取当前配置的模型（带缓存）
 export function getModels() {
   const config = getAIConfig()
-  return {
+  const hash = `${config.provider}|${config.baseUrl}|${config.apiKey}|${config.fastModel}|${config.qualityModel}`
+
+  if (cachedModels && cachedConfigHash === hash) {
+    return cachedModels
+  }
+
+  cachedModels = {
     fast: createModel(config, config.fastModel),
     quality: createModel(config, config.qualityModel),
   }
+  cachedConfigHash = hash
+  return cachedModels
+}
+
+// 清除模型缓存（配置变更时调用）
+export function clearModelCache() {
+  cachedModels = null
+  cachedConfigHash = null
 }
