@@ -2,9 +2,8 @@ import { v4 as uuid } from 'uuid'
 import { db } from './db/index'
 import { rawItems, digestItems, digestRuns, favorites } from './db/schema'
 import { eq, and, inArray, sql } from 'drizzle-orm'
-import { getPublicSources, getPrivateSources } from './sources'
+import { getPublicSources } from './sources'
 import { rssCollector } from './collectors/rss'
-import { browserCollector } from './collectors/browser'
 import { scoreItems } from './ai/scoring'
 import { clusterItems } from './ai/clustering'
 import { summarizeItems } from './ai/summarize'
@@ -61,8 +60,7 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
   // 初始化所有源为 pending
   const publicSources = getPublicSources()
-  const privateSources = getPrivateSources()
-  const allSources = [...publicSources, ...privateSources]
+  const allSources = publicSources
   const sourcesProgress: Record<string, SourceProgress> = {}
   for (const s of allSources) {
     sourcesProgress[s.id] = { status: 'pending', name: s.name, icon: s.icon }
@@ -115,27 +113,6 @@ export async function runDigestPipeline(date: string): Promise<string> {
         updateSource(source.id, { status: 'error', error: msg })
         await saveProgress(runId, progress)
         console.error(`[pipeline] ${source.name} 采集失败:`, err)
-      }
-    }
-
-    for (const source of privateSources) {
-      try {
-        updateSource(source.id, { status: 'running' })
-        progress.detail = `采集 ${source.name}...`
-        await saveProgress(runId, progress)
-
-        const startTime = Date.now()
-        const items = await browserCollector.collect(source.id, { targetUrl: source.targetUrl || '' })
-        const duration = (Date.now() - startTime) / 1000
-
-        allItems.push(...items)
-        updateSource(source.id, { status: 'done', count: items.length, duration })
-        await saveProgress(runId, progress)
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        errors[source.id] = msg
-        updateSource(source.id, { status: 'error', error: msg })
-        await saveProgress(runId, progress)
       }
     }
 
