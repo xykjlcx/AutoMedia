@@ -9,6 +9,7 @@ import { scoreItems, filterTopItems } from './ai/scoring'
 import { clusterItems } from './ai/clustering'
 import { summarizeItems } from './ai/summarize'
 import type { CollectedItem } from './collectors/types'
+import { sendDigestNotification } from './notify'
 
 // 并发保护：检查当天是否有正在运行的 pipeline
 export async function isDigestRunning(date: string): Promise<boolean> {
@@ -166,6 +167,11 @@ export async function runDigestPipeline(date: string): Promise<string> {
       progress: { step: 'completed', detail: `完成！共 ${summarized.length} 条精选` },
       errors: Object.keys(errors).length > 0 ? errors : null,
     }).where(eq(digestRuns.id, runId))
+
+    // 发送通知
+    sendDigestNotification(date, summarized.length).catch(err =>
+      console.error('[pipeline] 通知发送失败:', err)
+    )
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
