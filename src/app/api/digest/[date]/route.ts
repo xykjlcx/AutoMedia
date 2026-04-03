@@ -14,10 +14,12 @@ export async function GET(
   const allFavorites = await db.select().from(favorites)
   const favoriteMap = new Map(allFavorites.map(f => [f.digestItemId, f.id]))
 
+  const RECOMMEND_THRESHOLD = 5
   const itemsWithFavorite = items.map(item => ({
     ...item,
     isFavorited: favoriteMap.has(item.id),
     favoriteId: favoriteMap.get(item.id) || null,
+    isRecommended: item.aiScore >= RECOMMEND_THRESHOLD,
   }))
 
   // 按来源分组

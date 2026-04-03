@@ -178,20 +178,21 @@ export async function runDigestPipeline(date: string): Promise<string> {
       progress.detail = `已评分 ${done}/${allItems.length} 条`
       saveProgress(runId, progress)
     })
-    const filtered = filterTopItems(scored)
+    // 不过滤，所有评分过的内容都保留，前端用 Tab 分类展示
+    const recommendedCount = scored.filter(s => s.aiScore >= 5).length
     progress.scoring!.done = allItems.length
-    progress.scoring!.filtered = filtered.length
-    progress.detail = `评分完成，筛选出 ${filtered.length} 条`
+    progress.scoring!.filtered = recommendedCount
+    progress.detail = `评分完成，${recommendedCount} 条推荐`
     await saveProgress(runId, progress)
 
     // ── Stage 2: 跨源去重 ──
     progress.phase = 'clustering'
-    progress.clustering = { total: filtered.length, done: 0 }
+    progress.clustering = { total: scored.length, done: 0 }
     progress.detail = '跨源去重中...'
     await saveProgress(runId, progress)
 
-    const clustered = await clusterItems(filtered)
-    progress.clustering!.done = filtered.length
+    const clustered = await clusterItems(scored)
+    progress.clustering!.done = scored.length
     progress.detail = `去重完成，剩余 ${clustered.length} 条`
     await saveProgress(runId, progress)
 

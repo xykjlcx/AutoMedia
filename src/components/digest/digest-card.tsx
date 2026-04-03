@@ -21,6 +21,7 @@ export interface DigestItem {
   isFavorited: boolean
   favoriteId?: string
   isRead?: boolean
+  isRecommended?: boolean
 }
 
 interface DigestCardProps {
