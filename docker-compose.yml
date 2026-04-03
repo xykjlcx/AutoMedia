@@ -1,10 +1,18 @@
 services:
-  rsshub:
-    image: diygod/rsshub:latest
-    restart: unless-stopped
+  automedia:
+    build: .
     ports:
-      - "1200:1200"
+      - "3000:3000"
+    volumes:
+      - automedia-data:/app/data
     environment:
-      NODE_ENV: production
-      CACHE_TYPE: memory
-      CACHE_EXPIRE: 600
+      - DATABASE_PATH=/app/data/automedia.db
+      - RSSHUB_BASE_URL=https://rsshub.rssforever.com
+      # AI 模型配置（也可在设置页面配置）
+      # - ANTHROPIC_API_KEY=sk-ant-...
+      # - OPENAI_API_KEY=sk-...
+      - APP_URL=http://localhost:3000
+    restart: unless-stopped
+
+volumes:
+  automedia-data:

@@ -121,6 +121,18 @@ src/
          完成 → Telegram 通知
 ```
 
+## 部署
+
+### Docker（推荐）
+
+```bash
+git clone https://github.com/xykjlcx/AutoMedia.git
+cd AutoMedia
+docker compose up -d
+```
+
+详细部署文档：[docs/deploy.md](docs/deploy.md)
+
 ## 开发命令
 
 ```bash
