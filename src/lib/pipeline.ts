@@ -9,6 +9,7 @@ import { clusterItems } from './ai/clustering'
 import { summarizeItems } from './ai/summarize'
 import type { CollectedItem } from './collectors/types'
 import { sendDigestNotification } from './notify'
+import { pipelineEvents } from './pipeline-events'
 
 // ── 进度结构定义 ──
 
@@ -95,7 +96,7 @@ export async function runDigestPipeline(date: string): Promise<string> {
       try {
         updateSource(source.id, { status: 'running' })
         progress.detail = `采集 ${source.name}...`
-        await saveProgress(runId, progress)
+        await saveProgress(runId, progress, date)
 
         const startTime = Date.now()
         const items = await rssCollector.collect(source.id, {
@@ -106,12 +107,12 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
         allItems.push(...items)
         updateSource(source.id, { status: 'done', count: items.length, duration })
-        await saveProgress(runId, progress)
+        await saveProgress(runId, progress, date)
       } catch (err) {
         const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
         errors[source.id] = msg
         updateSource(source.id, { status: 'error', error: msg })
-        await saveProgress(runId, progress)
+        await saveProgress(runId, progress, date)
         console.error(`[pipeline] ${source.name} 采集失败:`, err)
       }
     }
@@ -149,43 +150,44 @@ export async function runDigestPipeline(date: string): Promise<string> {
       progress,
       status: 'processing',
     }).where(eq(digestRuns.id, runId))
+    pipelineEvents.emitProgress({ runId, date, progress })
 
     const scored = await scoreItems(allItems, async (done) => {
       progress.scoring!.done = done
       progress.detail = `已评分 ${done}/${allItems.length} 条`
-      await saveProgress(runId, progress)
+      await saveProgress(runId, progress, date)
     })
     // 不过滤，所有评分过的内容都保留，前端用 Tab 分类展示
     const recommendedCount = scored.filter(s => s.aiScore >= 5).length
     progress.scoring!.done = allItems.length
     progress.scoring!.filtered = recommendedCount
     progress.detail = `评分完成，${recommendedCount} 条推荐`
-    await saveProgress(runId, progress)
+    await saveProgress(runId, progress, date)
 
     // ── Stage 2: 跨源去重 ──
     progress.phase = 'clustering'
     progress.clustering = { total: scored.length, done: 0 }
     progress.detail = '跨源去重中...'
-    await saveProgress(runId, progress)
+    await saveProgress(runId, progress, date)
 
     const clustered = await clusterItems(scored)
     progress.clustering!.done = scored.length
     progress.detail = `去重完成，剩余 ${clustered.length} 条`
-    await saveProgress(runId, progress)
+    await saveProgress(runId, progress, date)
 
     // ── Stage 3: AI 摘要生成 ──
     progress.phase = 'summarizing'
     progress.summarizing = { total: clustered.length, done: 0 }
     progress.detail = 'AI 摘要生成中...'
-    await saveProgress(runId, progress)
+    await saveProgress(runId, progress, date)
 
     const summarized = await summarizeItems(clustered, async (done) => {
       progress.summarizing!.done = done
       progress.detail = `已生成 ${done}/${clustered.length} 条摘要`
-      await saveProgress(runId, progress)
+      await saveProgress(runId, progress, date)
     })
     progress.summarizing!.done = clustered.length
-    await saveProgress(runId, progress)
+    await saveProgress(runId, progress, date)
 
     // 写入精选数据（事务保证原子性）
     if (summarized.length > 0) {
@@ -246,6 +248,7 @@ export async function runDigestPipeline(date: string): Promise<string> {
       progress: completedProgress,
       errors: Object.keys(errors).length > 0 ? errors : null,
     }).where(eq(digestRuns.id, runId))
+    pipelineEvents.emitProgress({ runId, date, progress: completedProgress })
 
     // 发送通知
     sendDigestNotification(date, summarized.length).catch(err =>
@@ -268,13 +271,18 @@ export async function runDigestPipeline(date: string): Promise<string> {
       progress: failedProgress,
       errors: { ...errors, pipeline: msg },
     }).where(eq(digestRuns.id, runId))
+    pipelineEvents.emitProgress({ runId, date, progress: failedProgress })
   }
 
   return runId
 }
 
-async function saveProgress(runId: string, progress: PipelineProgress) {
+async function saveProgress(runId: string, progress: PipelineProgress, date?: string) {
   await db.update(digestRuns).set({
     progress: { ...progress },
   }).where(eq(digestRuns.id, runId))
+  // 同步广播到 SSE
+  if (date) {
+    pipelineEvents.emitProgress({ runId, date, progress: { ...progress } })
+  }
 }
