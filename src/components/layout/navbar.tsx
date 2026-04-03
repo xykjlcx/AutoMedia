@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Newspaper, Clock, Star, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ThemeToggle } from "@/components/layout/theme-toggle"
 
 const navLinks = [
   { href: "/", label: "今日日报", icon: Newspaper },
@@ -49,6 +50,7 @@ export function Navbar() {
             )
           })}
         </div>
+        <ThemeToggle />
       </div>
     </nav>
   )

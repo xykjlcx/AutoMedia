@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Source_Serif_4, DM_Sans, Geist_Mono } from "next/font/google"
 import { Navbar } from "@/components/layout/navbar"
+import { Providers } from "@/components/layout/providers"
 import "./globals.css"
 
 const sourceSerif = Source_Serif_4({
@@ -38,10 +39,12 @@ export default function RootLayout({
       className={`${sourceSerif.variable} ${dmSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Navbar />
-        <main className="flex-1 pt-14">
-          {children}
-        </main>
+        <Providers>
+          <Navbar />
+          <main className="flex-1 pt-14">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   )
