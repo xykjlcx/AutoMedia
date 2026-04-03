@@ -45,9 +45,10 @@ function ModelTestDialog({ open, onClose }: { open: boolean; onClose: () => void
     }
   }
 
-  const handleTestBoth = () => {
-    testModel('fast')
-    testModel('quality')
+  const handleTestBoth = async () => {
+    // 顺序执行，避免并发请求触发 API 限流
+    await testModel('fast')
+    await testModel('quality')
   }
 
   // 重置
