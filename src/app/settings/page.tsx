@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles } from "lucide-react"
+import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
@@ -12,6 +12,20 @@ interface SettingsData {
   fastModel: string
   qualityModel: string
   hasEnvKey: boolean
+}
+
+interface SourceConfig {
+  id: string
+  name: string
+  icon: string
+  type: string
+  rssPath: string
+  rssUrl: string
+  targetUrl: string
+  enabled: boolean
+  maxItems: number
+  sortOrder: number
+  createdAt: string
 }
 
 const PROVIDERS = [
@@ -56,6 +70,244 @@ const PROVIDERS = [
     ],
   },
 ]
+
+const TYPE_LABELS: Record<string, { label: string; className: string }> = {
+  public: { label: "公域", className: "bg-blue-50 text-blue-600 border border-blue-100" },
+  private: { label: "私域", className: "bg-amber-50 text-amber-600 border border-amber-100" },
+  "custom-rss": { label: "自定义", className: "bg-purple-50 text-purple-600 border border-purple-100" },
+}
+
+// 信息源管理 Section
+function SourcesSection() {
+  const [sources, setSources] = useState<SourceConfig[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newSource, setNewSource] = useState({ name: "", rssUrl: "", icon: "📰" })
+  const [adding, setAdding] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+
+  const fetchSources = () => {
+    fetch("/api/sources")
+      .then(r => r.json())
+      .then(data => {
+        setSources(data.sources || [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchSources() }, [])
+
+  const handleToggle = async (id: string, enabled: boolean) => {
+    // 乐观更新
+    setSources(prev => prev.map(s => s.id === id ? { ...s, enabled } : s))
+    await fetch(`/api/sources/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    })
+  }
+
+  const handleMaxItemsChange = async (id: string, maxItems: number) => {
+    setSources(prev => prev.map(s => s.id === id ? { ...s, maxItems } : s))
+    await fetch(`/api/sources/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ maxItems }),
+    })
+  }
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`确定要删除「${name}」吗？`)) return
+    setSources(prev => prev.filter(s => s.id !== id))
+    await fetch(`/api/sources/${id}`, { method: "DELETE" })
+  }
+
+  const handleAdd = async () => {
+    if (!newSource.name.trim() || !newSource.rssUrl.trim()) {
+      setAddError("名称和 RSS URL 不能为空")
+      return
+    }
+    setAdding(true)
+    setAddError(null)
+    try {
+      const res = await fetch("/api/sources", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSource),
+      })
+      if (!res.ok) throw new Error("添加失败")
+      setNewSource({ name: "", rssUrl: "", icon: "📰" })
+      setShowAddForm(false)
+      fetchSources()
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : "添加失败")
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  return (
+    <section>
+      <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-4">
+        <Rss className="size-4" />
+        信息源管理
+      </h2>
+
+      {loading ? (
+        <div className="text-sm text-muted-foreground py-4">加载中...</div>
+      ) : (
+        <div className="rounded-lg border border-border/60 bg-card overflow-hidden">
+          {sources.map((source, idx) => (
+            <div
+              key={source.id}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3",
+                idx !== sources.length - 1 && "border-b border-border/40"
+              )}
+            >
+              {/* 图标 + 名称 */}
+              <span className="text-lg leading-none shrink-0">{source.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium text-foreground truncate">{source.name}</span>
+                  {TYPE_LABELS[source.type] && (
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded font-medium leading-none",
+                      TYPE_LABELS[source.type].className
+                    )}>
+                      {TYPE_LABELS[source.type].label}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 每源数量 */}
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-xs text-muted-foreground">条数</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={source.maxItems}
+                  onChange={e => handleMaxItemsChange(source.id, Number(e.target.value))}
+                  className="w-12 px-1.5 py-1 rounded border border-border/60 bg-background text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)]"
+                />
+              </div>
+
+              {/* 开关 */}
+              <button
+                onClick={() => handleToggle(source.id, !source.enabled)}
+                className={cn(
+                  "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                  source.enabled
+                    ? "bg-[var(--color-warm-accent)]"
+                    : "bg-muted-foreground/30"
+                )}
+                aria-label={source.enabled ? "禁用" : "启用"}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
+                    source.enabled ? "translate-x-[18px]" : "translate-x-[2px]"
+                  )}
+                />
+              </button>
+
+              {/* 删除（仅自定义源） */}
+              {source.type === "custom-rss" && (
+                <button
+                  onClick={() => handleDelete(source.id, source.name)}
+                  className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                  aria-label="删除"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {sources.length === 0 && (
+            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+              暂无信息源
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 添加自定义 RSS */}
+      <div className="mt-3">
+        {!showAddForm ? (
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Plus className="size-4" />
+            添加自定义 RSS
+          </button>
+        ) : (
+          <div className="rounded-lg border border-border/60 bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">添加自定义 RSS</span>
+              <button
+                onClick={() => { setShowAddForm(false); setAddError(null) }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                取消
+              </button>
+            </div>
+
+            <div className="grid grid-cols-[auto_1fr] gap-3 items-center">
+              <label className="text-xs text-muted-foreground w-16">名称</label>
+              <input
+                type="text"
+                value={newSource.name}
+                onChange={e => setNewSource(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="例：少数派"
+                className="px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+              />
+              <label className="text-xs text-muted-foreground w-16">RSS URL</label>
+              <input
+                type="url"
+                value={newSource.rssUrl}
+                onChange={e => setNewSource(prev => ({ ...prev, rssUrl: e.target.value }))}
+                placeholder="https://sspai.com/feed"
+                className="px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+              />
+              <label className="text-xs text-muted-foreground w-16">图标</label>
+              <input
+                type="text"
+                value={newSource.icon}
+                onChange={e => setNewSource(prev => ({ ...prev, icon: e.target.value }))}
+                placeholder="📰"
+                className="w-20 px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+              />
+            </div>
+
+            {addError && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="size-3" />
+                {addError}
+              </p>
+            )}
+
+            <button
+              onClick={handleAdd}
+              disabled={adding}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
+                "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
+                adding && "opacity-60 cursor-wait"
+              )}
+            >
+              {adding ? "添加中..." : "保存"}
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsData>({
@@ -152,6 +404,11 @@ export default function SettingsPage() {
       <Separator className="mb-8" />
 
       <div className="space-y-8">
+        {/* 信息源管理 */}
+        <SourcesSection />
+
+        <Separator />
+
         {/* Provider 选择 */}
         <section>
           <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-4">
