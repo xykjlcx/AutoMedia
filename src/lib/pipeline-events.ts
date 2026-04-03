@@ -9,6 +9,11 @@ interface ProgressEvent {
 
 // 全局单例事件总线，pipeline 进度更新时 emit，SSE 端点监听
 class PipelineEventBus extends EventEmitter {
+  constructor() {
+    super()
+    this.setMaxListeners(50)
+  }
+
   // 每个 runId 的最新进度快照（SSE 连接时可立即推送当前状态）
   private snapshots = new Map<string, { date: string; progress: PipelineProgress }>()
 

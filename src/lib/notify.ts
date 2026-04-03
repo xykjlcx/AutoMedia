@@ -19,7 +19,6 @@ export async function sendDigestNotification(date: string, itemCount: number) {
       body: JSON.stringify({
         chat_id: config.telegramChatId,
         text: message,
-        parse_mode: 'HTML',
       }),
     })
   } catch (err) {

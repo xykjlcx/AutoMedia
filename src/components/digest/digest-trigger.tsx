@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
-import { RefreshCw, Loader2, CheckCircle2, AlertCircle, Check, Circle, Clock } from "lucide-react"
+import { RefreshCw, Loader2, CheckCircle2, AlertCircle, Check, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface DigestTriggerProps {
@@ -27,18 +27,10 @@ interface SourceProgress {
 interface PipelineProgress {
   phase: "collecting" | "scoring" | "clustering" | "summarizing" | "completed" | "failed"
   sources?: Record<string, SourceProgress>
-  scoring?: { total: number; done: number; filtered: number }
+  scoring?: { total: number; done: number; filtered: number; failed?: number }
   clustering?: { total: number; done: number }
-  summarizing?: { total: number; done: number }
+  summarizing?: { total: number; done: number; failed?: number }
   detail?: string
-}
-
-interface StatusResponse {
-  status: RunStatus
-  progress?: PipelineProgress | null
-  rawCount?: number
-  filteredCount?: number
-  errors?: Record<string, string> | null
 }
 
 // ── 步骤条定义 ──

@@ -36,7 +36,3 @@ export function getEnabledSources(): SourceConfig[] {
 export function getPublicSources(): SourceConfig[] {
   return getAllSources().filter(s => (s.type === 'public' || s.type === 'custom-rss') && s.enabled)
 }
-
-export function getPrivateSources(): SourceConfig[] {
-  return getAllSources().filter(s => s.type === 'private' && s.enabled)
-}

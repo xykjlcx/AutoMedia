@@ -41,6 +41,8 @@ export async function GET(request: Request) {
           } else {
             send({ type: 'status', status: 'none', date })
           }
+        }).catch(() => {
+          send({ type: 'status', status: 'none', date })
         })
       }
 
@@ -75,7 +77,6 @@ export async function GET(request: Request) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
     },
   })
 }

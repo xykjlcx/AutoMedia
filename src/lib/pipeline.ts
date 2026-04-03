@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import { db } from './db/index'
 import { rawItems, digestRuns } from './db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { getPublicSources } from './sources'
 import { rssCollector } from './collectors/rss'
 import { scoreItems } from './ai/scoring'
@@ -38,16 +38,9 @@ export async function isDigestRunning(date: string): Promise<boolean> {
   const runs = await db.select().from(digestRuns)
     .where(and(
       eq(digestRuns.digestDate, date),
-      eq(digestRuns.status, 'collecting'),
+      inArray(digestRuns.status, ['collecting', 'processing']),
     )).limit(1)
-  if (runs.length > 0) return true
-
-  const runs2 = await db.select().from(digestRuns)
-    .where(and(
-      eq(digestRuns.digestDate, date),
-      eq(digestRuns.status, 'processing'),
-    )).limit(1)
-  return runs2.length > 0
+  return runs.length > 0
 }
 
 export async function runDigestPipeline(date: string): Promise<string> {
