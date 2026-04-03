@@ -667,7 +667,8 @@ export default function SettingsPage() {
             className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
           />
           <p className="text-xs text-muted-foreground mt-1.5">
-            填写 API 服务的完整地址。中转站、自建服务或官方地址均可。留空使用默认地址。
+            填写 API 服务地址。Anthropic 协议会在末尾自动拼接 /messages，OpenAI 协议会拼接 /chat/completions。
+            例：MiniMax Anthropic 填 https://api.minimaxi.com/anthropic/v1，OpenAI 填 https://api.minimaxi.com/v1
           </p>
         </section>
 
