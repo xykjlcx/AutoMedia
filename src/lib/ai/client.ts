@@ -1,13 +1,12 @@
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import type { LanguageModel } from 'ai'
 import { db } from '../db/index'
 import { aiSettings } from '../db/schema'
 import { eq } from 'drizzle-orm'
 
 export interface AIConfig {
-  provider: string
+  provider: string // 'openai' | 'anthropic'（API 协议，不是服务商）
   baseUrl: string
   apiKey: string
   fastModel: string
@@ -15,11 +14,11 @@ export interface AIConfig {
 }
 
 const DEFAULT_CONFIG: AIConfig = {
-  provider: 'anthropic',
+  provider: 'openai',
   baseUrl: '',
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-  fastModel: 'claude-haiku-4-5-20251001',
-  qualityModel: 'claude-sonnet-4-6',
+  apiKey: process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || '',
+  fastModel: 'gpt-4o-mini',
+  qualityModel: 'gpt-4o',
 }
 
 // 从数据库读取 AI 配置
@@ -32,53 +31,35 @@ export function getAIConfig(): AIConfig {
     return {
       provider: row.provider,
       baseUrl: row.baseUrl || '',
-      // DB 里存的 key 优先，没有则 fallback 到环境变量
-      apiKey: row.apiKey || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
+      apiKey: row.apiKey || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || '',
       fastModel: row.fastModel,
       qualityModel: row.qualityModel,
     }
   } catch {
-    // 表可能还不存在（迁移前）
     return DEFAULT_CONFIG
   }
 }
 
-// 根据 provider 和模型名创建 LanguageModel 实例
+// 根据 API 协议创建模型实例
 function createModel(config: AIConfig, modelName: string): LanguageModel {
-  switch (config.provider) {
-    case 'anthropic': {
-      const provider = createAnthropic({
-        apiKey: config.apiKey,
-        ...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
-      })
-      return provider(modelName)
-    }
-    case 'openai-compatible': {
-      const provider = createOpenAI({
-        apiKey: config.apiKey,
-        baseURL: config.baseUrl || 'https://api.openai.com/v1',
-      })
-      return provider(modelName)
-    }
-    case 'google': {
-      const provider = createGoogleGenerativeAI({
-        apiKey: config.apiKey,
-        ...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
-      })
-      return provider(modelName)
-    }
-    default: {
-      // 默认当 OpenAI 兼容处理（中转站通常都兼容 OpenAI 格式）
-      const provider = createOpenAI({
-        apiKey: config.apiKey,
-        baseURL: config.baseUrl || 'https://api.openai.com/v1',
-      })
-      return provider(modelName)
-    }
+  if (config.provider === 'anthropic') {
+    // Anthropic Messages 原生协议
+    const provider = createAnthropic({
+      apiKey: config.apiKey,
+      ...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
+    })
+    return provider(modelName)
   }
+
+  // 默认：OpenAI Chat Completions 协议（兼容 OpenAI / DeepSeek / Gemini / 中转站 / 自部署等）
+  const provider = createOpenAI({
+    apiKey: config.apiKey,
+    baseURL: config.baseUrl || 'https://api.openai.com/v1',
+  })
+  return provider(modelName)
 }
 
-// 获取当前配置的模型（每次调用都读取最新配置，支持热更新）
+// 获取当前配置的模型
 export function getModels() {
   const config = getAIConfig()
   return {

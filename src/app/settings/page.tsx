@@ -43,47 +43,9 @@ const CRON_PRESETS = [
   { label: "每 12 小时", value: "0 */12 * * *" },
 ]
 
-const PROVIDERS = [
-  {
-    id: "anthropic",
-    name: "Anthropic",
-    description: "Claude 系列模型",
-    placeholder: "sk-ant-...",
-    defaultFast: "claude-haiku-4-5-20251001",
-    defaultQuality: "claude-sonnet-4-6",
-    presets: [
-      { label: "Haiku 4.5", value: "claude-haiku-4-5-20251001" },
-      { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
-      { label: "Opus 4.6", value: "claude-opus-4-6" },
-    ],
-  },
-  {
-    id: "openai-compatible",
-    name: "OpenAI 兼容",
-    description: "OpenAI / DeepSeek / 中转站等",
-    placeholder: "sk-...",
-    defaultFast: "gpt-4o-mini",
-    defaultQuality: "gpt-4o",
-    presets: [
-      { label: "GPT-4o Mini", value: "gpt-4o-mini" },
-      { label: "GPT-4o", value: "gpt-4o" },
-      { label: "DeepSeek V3", value: "deepseek-chat" },
-      { label: "DeepSeek R1", value: "deepseek-reasoner" },
-    ],
-    showBaseUrl: true,
-  },
-  {
-    id: "google",
-    name: "Google Gemini",
-    description: "Gemini 系列模型",
-    placeholder: "AIza...",
-    defaultFast: "gemini-2.0-flash",
-    defaultQuality: "gemini-2.5-pro-preview-05-06",
-    presets: [
-      { label: "Gemini 2.0 Flash", value: "gemini-2.0-flash" },
-      { label: "Gemini 2.5 Pro", value: "gemini-2.5-pro-preview-05-06" },
-    ],
-  },
+const API_PROTOCOLS = [
+  { id: "openai", name: "OpenAI Chat Completions", description: "兼容 OpenAI / DeepSeek / Gemini / 中转站等" },
+  { id: "anthropic", name: "Anthropic Messages", description: "Claude 原生协议" },
 ]
 
 const TYPE_LABELS: Record<string, { label: string; className: string }> = {
@@ -372,20 +334,8 @@ export default function SettingsPage() {
       .catch(() => setScheduleLoading(false))
   }, [])
 
-  const currentProvider = PROVIDERS.find(p => p.id === settings.provider) || PROVIDERS[0]
-
-  const handleProviderChange = (providerId: string) => {
-    const provider = PROVIDERS.find(p => p.id === providerId)
-    if (!provider) return
-    setSettings(prev => ({
-      ...prev,
-      provider: providerId,
-      fastModel: provider.defaultFast,
-      qualityModel: provider.defaultQuality,
-      // 切换 provider 时清空 baseUrl 和 key
-      baseUrl: "",
-      apiKey: "",
-    }))
+  const handleProtocolChange = (protocol: string) => {
+    setSettings(prev => ({ ...prev, provider: protocol }))
     setSaved(false)
   }
 
@@ -492,29 +442,22 @@ export default function SettingsPage() {
 
         <Separator />
 
-        {/* Provider 选择 */}
+        {/* 请求地址 */}
         <section>
-          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-4">
+          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
             <Server className="size-4" />
-            服务商
+            请求地址
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {PROVIDERS.map(provider => (
-              <button
-                key={provider.id}
-                onClick={() => handleProviderChange(provider.id)}
-                className={cn(
-                  "flex flex-col items-start gap-1 p-4 rounded-lg border transition-all text-left",
-                  settings.provider === provider.id
-                    ? "border-[var(--color-warm-accent)] bg-[var(--color-warm-accent)]/5 shadow-sm"
-                    : "border-border/60 hover:border-border hover:bg-muted/50"
-                )}
-              >
-                <span className="font-medium text-sm text-foreground">{provider.name}</span>
-                <span className="text-xs text-muted-foreground">{provider.description}</span>
-              </button>
-            ))}
-          </div>
+          <input
+            type="url"
+            value={settings.baseUrl}
+            onChange={e => { setSettings(prev => ({ ...prev, baseUrl: e.target.value })); setSaved(false) }}
+            placeholder={settings.provider === 'anthropic' ? "https://api.anthropic.com" : "https://api.openai.com/v1"}
+            className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+          />
+          <p className="text-xs text-muted-foreground mt-1.5">
+            填写 API 服务的完整地址。中转站、自建服务或官方地址均可。留空使用默认地址。
+          </p>
         </section>
 
         {/* API Key */}
@@ -532,109 +475,72 @@ export default function SettingsPage() {
             type="password"
             value={settings.apiKey}
             onChange={e => { setSettings(prev => ({ ...prev, apiKey: e.target.value })); setSaved(false) }}
-            placeholder={currentProvider.placeholder}
+            placeholder="sk-..."
             className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
           />
         </section>
 
-        {/* Base URL（仅 OpenAI 兼容模式显示） */}
-        {currentProvider.showBaseUrl && (
-          <section>
-            <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
-              <Server className="size-4" />
-              Base URL
-            </h2>
-            <input
-              type="url"
-              value={settings.baseUrl}
-              onChange={e => { setSettings(prev => ({ ...prev, baseUrl: e.target.value })); setSaved(false) }}
-              placeholder="https://api.openai.com/v1"
-              className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-            />
-            <p className="text-xs text-muted-foreground mt-1.5">
-              中转站或自建服务的接口地址，留空则使用 OpenAI 官方地址
-            </p>
-          </section>
-        )}
+        {/* API 协议 */}
+        <section>
+          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
+            <Server className="size-4" />
+            API 协议
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {API_PROTOCOLS.map(protocol => (
+              <button
+                key={protocol.id}
+                onClick={() => handleProtocolChange(protocol.id)}
+                className={cn(
+                  "flex flex-col items-start gap-1 p-3 rounded-lg border transition-all text-left",
+                  settings.provider === protocol.id
+                    ? "border-[var(--color-warm-accent)] bg-[var(--color-warm-accent)]/5"
+                    : "border-border/60 hover:border-border hover:bg-muted/50"
+                )}
+              >
+                <span className="font-medium text-sm text-foreground">{protocol.name}</span>
+                <span className="text-xs text-muted-foreground">{protocol.description}</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
-        {/* 模型选择 */}
+        {/* 模型名称 */}
         <section>
           <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-4">
             <Cpu className="size-4" />
-            模型配置
+            模型名称
           </h2>
 
           <div className="space-y-4">
-            {/* 快速模型 */}
             <div className="p-4 rounded-lg border border-border/60 bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="size-4 text-amber-500" />
                 <span className="text-sm font-medium text-foreground">快速模型</span>
                 <span className="text-xs text-muted-foreground">— 评分筛选、去重聚类</span>
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={settings.fastModel}
-                  onChange={e => { setSettings(prev => ({ ...prev, fastModel: e.target.value })); setSaved(false) }}
-                  placeholder="模型名称"
-                  className="flex-1 px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-                />
-              </div>
-              {currentProvider.presets.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {currentProvider.presets.map(preset => (
-                    <button
-                      key={preset.value}
-                      onClick={() => { setSettings(prev => ({ ...prev, fastModel: preset.value })); setSaved(false) }}
-                      className={cn(
-                        "px-2 py-0.5 rounded text-xs transition-colors",
-                        settings.fastModel === preset.value
-                          ? "bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)] font-medium"
-                          : "bg-muted text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <input
+                type="text"
+                value={settings.fastModel}
+                onChange={e => { setSettings(prev => ({ ...prev, fastModel: e.target.value })); setSaved(false) }}
+                placeholder="例：gpt-4o-mini / claude-haiku-4-5-20251001 / deepseek-chat"
+                className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+              />
             </div>
 
-            {/* 质量模型 */}
             <div className="p-4 rounded-lg border border-border/60 bg-card">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="size-4 text-purple-500" />
                 <span className="text-sm font-medium text-foreground">质量模型</span>
                 <span className="text-xs text-muted-foreground">— 摘要生成</span>
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={settings.qualityModel}
-                  onChange={e => { setSettings(prev => ({ ...prev, qualityModel: e.target.value })); setSaved(false) }}
-                  placeholder="模型名称"
-                  className="flex-1 px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-                />
-              </div>
-              {currentProvider.presets.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {currentProvider.presets.map(preset => (
-                    <button
-                      key={preset.value}
-                      onClick={() => { setSettings(prev => ({ ...prev, qualityModel: preset.value })); setSaved(false) }}
-                      className={cn(
-                        "px-2 py-0.5 rounded text-xs transition-colors",
-                        settings.qualityModel === preset.value
-                          ? "bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)] font-medium"
-                          : "bg-muted text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <input
+                type="text"
+                value={settings.qualityModel}
+                onChange={e => { setSettings(prev => ({ ...prev, qualityModel: e.target.value })); setSaved(false) }}
+                placeholder="例：gpt-4o / claude-sonnet-4-6 / deepseek-chat"
+                className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+              />
             </div>
           </div>
         </section>
