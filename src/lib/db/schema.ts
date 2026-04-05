@@ -167,3 +167,12 @@ export const userEvents = sqliteTable('user_events', {
   metadata: text('metadata', { mode: 'json' }),
   createdAt: text('created_at').notNull(),
 })
+
+// 阅读位置记忆
+export const readingPosition = sqliteTable('reading_position', {
+  id: text('id').primaryKey(),
+  pagePath: text('page_path').notNull(), // URL 路径，如 '/'、'/favorites'
+  pageKey: text('page_key').notNull(), // 附加 key，如日期 '2026-04-05'
+  scrollY: integer('scroll_y').notNull(), // 滚动位置
+  updatedAt: text('updated_at').notNull(),
+})

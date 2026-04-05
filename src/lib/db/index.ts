@@ -116,6 +116,19 @@ sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_draft_sources_draft ON draft_sources
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_share_cards_draft ON share_cards(draft_id)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_events_type ON user_events(event_type)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_events_target ON user_events(target_type, target_id)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_events_created ON user_events(created_at)`)
+
+// 阅读位置记忆
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS reading_position (
+    id TEXT PRIMARY KEY,
+    page_path TEXT NOT NULL,
+    page_key TEXT NOT NULL,
+    scroll_y INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+  )
+`)
+sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_reading_position_path_key ON reading_position(page_path, page_key)`)
 
 export const db = drizzle(sqlite, { schema })
 
