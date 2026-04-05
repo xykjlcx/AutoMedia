@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle } from "lucide-react"
+import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle, Compass, RefreshCw, Eye, EyeOff } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
@@ -267,8 +267,194 @@ const TYPE_LABELS: Record<string, { label: string; className: string }> = {
   "custom-rss": { label: "自定义", className: "bg-purple-50 text-purple-600 border border-purple-100" },
 }
 
-// 信息源管理 Section
+const CATEGORY_LABELS: Record<string, { label: string; className: string }> = {
+  ai: { label: "AI / ML", className: "bg-violet-50 text-violet-600 border border-violet-100 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-900/30" },
+  ecommerce: { label: "跨境电商", className: "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/30" },
+  tech: { label: "技术开发", className: "bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/30" },
+  startup: { label: "创业 / 产品", className: "bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-900/30" },
+  general: { label: "综合资讯", className: "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-950/30 dark:text-slate-400 dark:border-slate-900/30" },
+}
+
+interface SuggestionItem {
+  id: string
+  name: string
+  description: string
+  rssUrl: string
+  category: string
+  reason: string
+  status: string
+  createdAt: string
+}
+
+// 发现 — AI 推荐 RSS 源
+function DiscoveryPanel() {
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [actioningId, setActioningId] = useState<string | null>(null)
+
+  const fetchSuggestions = () => {
+    setLoading(true)
+    fetch("/api/discovery/suggestions")
+      .then(r => r.json())
+      .then(data => {
+        setSuggestions(data.suggestions || [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchSuggestions() }, [])
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      const res = await fetch("/api/discovery/suggestions/refresh", { method: "POST" })
+      const data = await res.json()
+      setSuggestions(data.suggestions || [])
+    } catch { /* 静默 */ }
+    setRefreshing(false)
+  }
+
+  const handleAdd = async (id: string) => {
+    setActioningId(id)
+    try {
+      const res = await fetch("/api/discovery/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ suggestionId: id }),
+      })
+      if (res.ok) {
+        // 移除已添加的推荐
+        setSuggestions(prev => prev.filter(s => s.id !== id))
+      }
+    } catch { /* 静默 */ }
+    setActioningId(null)
+  }
+
+  const handleDismiss = async (id: string) => {
+    setActioningId(id)
+    try {
+      const res = await fetch("/api/discovery/dismiss", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ suggestionId: id }),
+      })
+      if (res.ok) {
+        setSuggestions(prev => prev.filter(s => s.id !== id))
+      }
+    } catch { /* 静默 */ }
+    setActioningId(null)
+  }
+
+  if (loading) {
+    return (
+      <div className="py-8 text-center">
+        <Loader2 className="size-5 animate-spin mx-auto text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">正在生成推荐...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* 刷新按钮 */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          根据你的阅读偏好，AI 推荐以下 RSS 源
+        </p>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+            "border border-border/60 bg-background hover:bg-muted active:scale-[0.98]",
+            refreshing && "opacity-60 cursor-wait"
+          )}
+        >
+          <RefreshCw className={cn("size-3", refreshing && "animate-spin")} />
+          {refreshing ? "生成中..." : "重新推荐"}
+        </button>
+      </div>
+
+      {/* 推荐列表 */}
+      {suggestions.length === 0 ? (
+        <div className="rounded-lg border border-border/60 bg-card px-4 py-8 text-center">
+          <Compass className="size-8 mx-auto text-muted-foreground/40 mb-3" />
+          <p className="text-sm text-muted-foreground">暂无推荐</p>
+          <p className="text-xs text-muted-foreground mt-1">点击「重新推荐」获取新的 RSS 源推荐</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {suggestions.map(suggestion => (
+            <div
+              key={suggestion.id}
+              className="rounded-lg border border-border/60 bg-card p-4 space-y-2"
+            >
+              {/* 标题行 */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-foreground">{suggestion.name}</span>
+                    {CATEGORY_LABELS[suggestion.category] && (
+                      <span className={cn(
+                        "text-[10px] px-1.5 py-0.5 rounded font-medium leading-none",
+                        CATEGORY_LABELS[suggestion.category].className
+                      )}>
+                        {CATEGORY_LABELS[suggestion.category].label}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{suggestion.description}</p>
+                </div>
+              </div>
+
+              {/* 推荐理由 */}
+              <div className="px-3 py-2 rounded bg-[var(--color-warm-accent)]/5 border border-[var(--color-warm-accent)]/10">
+                <p className="text-xs text-foreground/80">
+                  <Sparkles className="size-3 inline-block mr-1 text-[var(--color-warm-accent)]" />
+                  {suggestion.reason}
+                </p>
+              </div>
+
+              {/* 操作按钮 */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={() => handleAdd(suggestion.id)}
+                  disabled={actioningId === suggestion.id}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
+                    actioningId === suggestion.id && "opacity-60 cursor-wait"
+                  )}
+                >
+                  <Plus className="size-3" />
+                  添加
+                </button>
+                <button
+                  onClick={() => handleDismiss(suggestion.id)}
+                  disabled={actioningId === suggestion.id}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    "border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted active:scale-[0.98]",
+                    actioningId === suggestion.id && "opacity-60 cursor-wait"
+                  )}
+                >
+                  <EyeOff className="size-3" />
+                  不感兴趣
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// 信息源管理 Section（带 Tab 切换）
 function SourcesSection() {
+  const [activeTab, setActiveTab] = useState<"sources" | "discovery">("sources")
   const [sources, setSources] = useState<SourceConfig[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -344,157 +530,193 @@ function SourcesSection() {
         信息源管理
       </h2>
 
-      {loading ? (
-        <div className="text-sm text-muted-foreground py-4">加载中...</div>
-      ) : (
-        <div className="rounded-lg border border-border/60 bg-card overflow-hidden">
-          {sources.map((source, idx) => (
-            <div
-              key={source.id}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3",
-                idx !== sources.length - 1 && "border-b border-border/40"
-              )}
-            >
-              {/* 图标 + 名称 */}
-              <span className="text-lg leading-none shrink-0">{source.icon}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-foreground truncate">{source.name}</span>
-                  {TYPE_LABELS[source.type] && (
-                    <span className={cn(
-                      "text-[10px] px-1.5 py-0.5 rounded font-medium leading-none",
-                      TYPE_LABELS[source.type].className
-                    )}>
-                      {TYPE_LABELS[source.type].label}
-                    </span>
+      {/* Tab 切换 */}
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg bg-muted/50">
+        <button
+          onClick={() => setActiveTab("sources")}
+          className={cn(
+            "flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+            activeTab === "sources"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Rss className="size-3.5" />
+          我的源
+        </button>
+        <button
+          onClick={() => setActiveTab("discovery")}
+          className={cn(
+            "flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+            activeTab === "discovery"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Compass className="size-3.5" />
+          发现
+        </button>
+      </div>
+
+      {/* 我的源 */}
+      {activeTab === "sources" && (
+        <>
+          {loading ? (
+            <div className="text-sm text-muted-foreground py-4">加载中...</div>
+          ) : (
+            <div className="rounded-lg border border-border/60 bg-card overflow-hidden">
+              {sources.map((source, idx) => (
+                <div
+                  key={source.id}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3",
+                    idx !== sources.length - 1 && "border-b border-border/40"
+                  )}
+                >
+                  {/* 图标 + 名称 */}
+                  <span className="text-lg leading-none shrink-0">{source.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-foreground truncate">{source.name}</span>
+                      {TYPE_LABELS[source.type] && (
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded font-medium leading-none",
+                          TYPE_LABELS[source.type].className
+                        )}>
+                          {TYPE_LABELS[source.type].label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 每源数量 */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-xs text-muted-foreground">条数</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={source.maxItems}
+                      onChange={e => handleMaxItemsChange(source.id, Number(e.target.value))}
+                      className="w-12 px-1.5 py-1 rounded border border-border/60 bg-background text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)]"
+                    />
+                  </div>
+
+                  {/* 开关 */}
+                  <button
+                    onClick={() => handleToggle(source.id, !source.enabled)}
+                    className={cn(
+                      "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                      source.enabled
+                        ? "bg-[var(--color-warm-accent)]"
+                        : "bg-muted-foreground/30"
+                    )}
+                    aria-label={source.enabled ? "禁用" : "启用"}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
+                        source.enabled ? "translate-x-[18px]" : "translate-x-[2px]"
+                      )}
+                    />
+                  </button>
+
+                  {/* 删除（仅自定义源） */}
+                  {source.type === "custom-rss" && (
+                    <button
+                      onClick={() => handleDelete(source.id, source.name)}
+                      className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                      aria-label="删除"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
                   )}
                 </div>
-              </div>
+              ))}
 
-              {/* 每源数量 */}
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="text-xs text-muted-foreground">条数</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={10}
-                  value={source.maxItems}
-                  onChange={e => handleMaxItemsChange(source.id, Number(e.target.value))}
-                  className="w-12 px-1.5 py-1 rounded border border-border/60 bg-background text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)]"
-                />
-              </div>
-
-              {/* 开关 */}
-              <button
-                onClick={() => handleToggle(source.id, !source.enabled)}
-                className={cn(
-                  "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-                  source.enabled
-                    ? "bg-[var(--color-warm-accent)]"
-                    : "bg-muted-foreground/30"
-                )}
-                aria-label={source.enabled ? "禁用" : "启用"}
-              >
-                <span
-                  className={cn(
-                    "inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform",
-                    source.enabled ? "translate-x-[18px]" : "translate-x-[2px]"
-                  )}
-                />
-              </button>
-
-              {/* 删除（仅自定义源） */}
-              {source.type === "custom-rss" && (
-                <button
-                  onClick={() => handleDelete(source.id, source.name)}
-                  className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
-                  aria-label="删除"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
+              {sources.length === 0 && (
+                <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                  暂无信息源
+                </div>
               )}
-            </div>
-          ))}
-
-          {sources.length === 0 && (
-            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-              暂无信息源
             </div>
           )}
-        </div>
+
+          {/* 添加自定义 RSS */}
+          <div className="mt-3">
+            {!showAddForm ? (
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Plus className="size-4" />
+                添加自定义 RSS
+              </button>
+            ) : (
+              <div className="rounded-lg border border-border/60 bg-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">添加自定义 RSS</span>
+                  <button
+                    onClick={() => { setShowAddForm(false); setAddError(null) }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    取消
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-[auto_1fr] gap-3 items-center">
+                  <label className="text-xs text-muted-foreground w-16">名称</label>
+                  <input
+                    type="text"
+                    value={newSource.name}
+                    onChange={e => setNewSource(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="例：少数派"
+                    className="px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                  />
+                  <label className="text-xs text-muted-foreground w-16">RSS URL</label>
+                  <input
+                    type="url"
+                    value={newSource.rssUrl}
+                    onChange={e => setNewSource(prev => ({ ...prev, rssUrl: e.target.value }))}
+                    placeholder="https://sspai.com/feed"
+                    className="px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                  />
+                  <label className="text-xs text-muted-foreground w-16">图标</label>
+                  <input
+                    type="text"
+                    value={newSource.icon}
+                    onChange={e => setNewSource(prev => ({ ...prev, icon: e.target.value }))}
+                    placeholder="📰"
+                    className="w-20 px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                  />
+                </div>
+
+                {addError && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="size-3" />
+                    {addError}
+                  </p>
+                )}
+
+                <button
+                  onClick={handleAdd}
+                  disabled={adding}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
+                    "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
+                    adding && "opacity-60 cursor-wait"
+                  )}
+                >
+                  {adding ? "添加中..." : "保存"}
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
-      {/* 添加自定义 RSS */}
-      <div className="mt-3">
-        {!showAddForm ? (
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Plus className="size-4" />
-            添加自定义 RSS
-          </button>
-        ) : (
-          <div className="rounded-lg border border-border/60 bg-card p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">添加自定义 RSS</span>
-              <button
-                onClick={() => { setShowAddForm(false); setAddError(null) }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                取消
-              </button>
-            </div>
-
-            <div className="grid grid-cols-[auto_1fr] gap-3 items-center">
-              <label className="text-xs text-muted-foreground w-16">名称</label>
-              <input
-                type="text"
-                value={newSource.name}
-                onChange={e => setNewSource(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="例：少数派"
-                className="px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-              />
-              <label className="text-xs text-muted-foreground w-16">RSS URL</label>
-              <input
-                type="url"
-                value={newSource.rssUrl}
-                onChange={e => setNewSource(prev => ({ ...prev, rssUrl: e.target.value }))}
-                placeholder="https://sspai.com/feed"
-                className="px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-              />
-              <label className="text-xs text-muted-foreground w-16">图标</label>
-              <input
-                type="text"
-                value={newSource.icon}
-                onChange={e => setNewSource(prev => ({ ...prev, icon: e.target.value }))}
-                placeholder="📰"
-                className="w-20 px-3 py-1.5 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-              />
-            </div>
-
-            {addError && (
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="size-3" />
-                {addError}
-              </p>
-            )}
-
-            <button
-              onClick={handleAdd}
-              disabled={adding}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
-                "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
-                adding && "opacity-60 cursor-wait"
-              )}
-            >
-              {adding ? "添加中..." : "保存"}
-            </button>
-          </div>
-        )}
-      </div>
+      {/* 发现 */}
+      {activeTab === "discovery" && <DiscoveryPanel />}
     </section>
   )
 }
