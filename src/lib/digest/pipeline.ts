@@ -10,7 +10,8 @@ import { summarizeItems } from './summarize'
 import { analyzeTrends } from './trends'
 import { extractEntities } from './entity-extract'
 import type { CollectedItem } from './collectors/types'
-import { sendDigestNotification } from '@/lib/notify'
+import { sendDigestNotification, sendCrossSourceAlerts } from '@/lib/notify'
+import { detectCrossSourceAlerts } from './cross-source-alert'
 import { shouldUpdateProfile, updatePreferenceProfile } from './preference'
 import { pipelineEvents } from '@/lib/pipeline-events'
 
@@ -333,6 +334,16 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
     progress.timing!.entityExtract = Math.round((Date.now() - entityStartTime) / 1000)
     await saveProgress(runId, progress, date)
+
+    // 实体提取完成后，检测破圈预警并推送（fire and forget）
+    try {
+      const crossAlerts = detectCrossSourceAlerts(date)
+      sendCrossSourceAlerts(crossAlerts).catch(err =>
+        console.error('[pipeline] 破圈预警推送失败:', err)
+      )
+    } catch (err) {
+      console.error('[pipeline] 破圈预警检测失败:', err)
+    }
 
     // 统计当天总数
     const totalDigest = (db.$client
