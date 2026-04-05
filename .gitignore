@@ -51,3 +51,7 @@ data/cards/
 *.tsbuildinfo
 next-env.d.ts
 public/fonts/
+
+# 生成的图片（仅保留目录）
+public/images/generated/*
+!public/images/generated/.gitkeep
