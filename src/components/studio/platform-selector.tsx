@@ -17,16 +17,16 @@ interface PlatformSelectorProps {
 
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-0.5 bg-muted/50 rounded-lg p-0.5">
       {platforms.map(p => (
         <button
           key={p.key}
           onClick={() => onChange(p.key)}
           className={cn(
-            'inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
+            'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all',
             value === p.key
-              ? 'bg-[var(--color-warm-accent)] text-white'
-              : 'text-muted-foreground hover:bg-muted'
+              ? 'bg-card text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <span>{p.icon}</span>

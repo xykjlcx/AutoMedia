@@ -8,7 +8,8 @@ import { PlatformSelector } from './platform-selector'
 import type { Platform } from './platform-selector'
 import { CardPreview } from './card-preview'
 import { ExportDialog } from './export-dialog'
-import { PanelLeftOpen, PanelLeftClose, PanelRightOpen, PanelRightClose, Loader2 } from 'lucide-react'
+import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Download, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface DraftState {
   id: string | null
@@ -32,6 +33,7 @@ export function StudioPage() {
   const [generating, setGenerating] = useState(false)
   const [showCardPreview, setShowCardPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // 从 URL 参数初始化（日报页跳转过来时带 items 参数）
   useEffect(() => {
@@ -78,6 +80,9 @@ export function StudioPage() {
       if (data.content) {
         setDraft(prev => ({ ...prev, content: data.content }))
       }
+      if (data.raw?.title) {
+        setDraft(prev => ({ ...prev, title: data.raw.title }))
+      }
     } finally {
       setGenerating(false)
     }
@@ -85,43 +90,23 @@ export function StudioPage() {
 
   // 复制到剪贴板
   const handleCopy = () => {
-    navigator.clipboard.writeText(draft.content)
+    const fullText = draft.title ? `# ${draft.title}\n\n${draft.content}` : draft.content
+    navigator.clipboard.writeText(fullText)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] h-[calc(100vh-3.5rem)] flex flex-col">
-      {/* 顶部工具栏 */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border/60">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setLeftOpen(!leftOpen)} className="p-1.5 rounded-md hover:bg-muted transition-colors" title="素材面板">
-            {leftOpen ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
-          </button>
-          <PlatformSelector value={draft.platform} onChange={(p) => setDraft(prev => ({ ...prev, platform: p }))} />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleGenerate}
-            disabled={generating || draft.sourceIds.length === 0}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-warm-accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {generating ? <Loader2 className="size-4 animate-spin" /> : <span>✨</span>}
-            <span>{generating ? '生成中...' : '生成'}</span>
-          </button>
-          <button onClick={handleCopy} className="px-3 py-1.5 rounded-lg text-sm hover:bg-muted transition-colors" title="复制 Markdown">📋</button>
-          <button onClick={async () => { const id = await saveDraft(); if (id) setShowCardPreview(true) }} className="px-3 py-1.5 rounded-lg text-sm hover:bg-muted transition-colors" title="生成卡片">🖼</button>
-          <button onClick={async () => { const id = await saveDraft(); if (id) setShowExport(true) }} className="px-3 py-1.5 rounded-lg text-sm hover:bg-muted transition-colors" title="导出">📤</button>
-          <button onClick={() => setRightOpen(!rightOpen)} className="p-1.5 rounded-md hover:bg-muted transition-colors" title="预览面板">
-            {rightOpen ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
-          </button>
-        </div>
-      </div>
-
+    <div className="h-[calc(100vh-3.5rem)] flex flex-col bg-background">
       {/* 主体三栏 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 左侧：素材面板 */}
         {leftOpen && (
-          <div className="w-72 border-r border-border/60 overflow-y-auto shrink-0">
+          <div className="w-72 border-r border-border/60 overflow-y-auto shrink-0 bg-card">
+            <div className="px-3 py-3 border-b border-border/60 flex items-center justify-between">
+              <span className="text-sm font-medium">素材库</span>
+              <span className="text-xs text-muted-foreground">{draft.sourceIds.length} 篇已选</span>
+            </div>
             <SourcePicker
               selectedIds={draft.sourceIds}
               onSelectionChange={(ids) => setDraft(prev => ({ ...prev, sourceIds: ids }))}
@@ -130,19 +115,99 @@ export function StudioPage() {
         )}
 
         {/* 中间：编辑器 */}
-        <div className="flex-1 overflow-hidden">
-          <DraftEditor
-            content={draft.content}
-            onChange={(content) => setDraft(prev => ({ ...prev, content }))}
-          />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* 编辑器头部 */}
+          <div className="border-b border-border/60 px-4 py-2.5 flex items-center justify-between bg-card/50">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setLeftOpen(!leftOpen)}
+                className={cn(
+                  'p-1.5 rounded-md transition-colors',
+                  leftOpen ? 'bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)]' : 'hover:bg-muted text-muted-foreground'
+                )}
+                title="素材面板"
+              >
+                {leftOpen ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
+              </button>
+              <div className="h-4 w-px bg-border/60" />
+              <PlatformSelector value={draft.platform} onChange={(p) => setDraft(prev => ({ ...prev, platform: p }))} />
+            </div>
+
+            <button
+              onClick={() => setRightOpen(!rightOpen)}
+              className={cn(
+                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
+                rightOpen ? 'bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)]' : 'text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {rightOpen ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+              <span>预览</span>
+            </button>
+          </div>
+
+          {/* 编辑器主体 */}
+          <div className="flex-1 overflow-hidden">
+            <DraftEditor
+              title={draft.title}
+              content={draft.content}
+              onTitleChange={(title) => setDraft(prev => ({ ...prev, title }))}
+              onContentChange={(content) => setDraft(prev => ({ ...prev, content }))}
+              platform={draft.platform}
+            />
+          </div>
+
+          {/* 底部操作栏 */}
+          <div className="border-t border-border/60 px-4 py-2.5 flex items-center justify-between bg-card/50">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+              >
+                <Copy className="size-3.5" />
+                <span>{copied ? '已复制' : '复制'}</span>
+              </button>
+              <button
+                onClick={async () => { const id = await saveDraft(); if (id) setShowCardPreview(true) }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+              >
+                <Image className="size-3.5" />
+                <span>分享卡片</span>
+              </button>
+              <button
+                onClick={async () => { const id = await saveDraft(); if (id) setShowExport(true) }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+              >
+                <Download className="size-3.5" />
+                <span>导出</span>
+              </button>
+            </div>
+
+            <button
+              onClick={handleGenerate}
+              disabled={generating || draft.sourceIds.length === 0}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[var(--color-warm-accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {generating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              <span>{generating ? '生成中...' : 'AI 生成'}</span>
+            </button>
+          </div>
         </div>
 
         {/* 右侧：预览面板 */}
         {rightOpen && (
-          <div className="w-80 border-l border-border/60 overflow-y-auto shrink-0 p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">预览</h3>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: simpleMarkdownRender(draft.content) }} />
+          <div className="w-80 border-l border-border/60 overflow-y-auto shrink-0 bg-card">
+            <div className="px-4 py-3 border-b border-border/60">
+              <span className="text-sm font-medium">预览</span>
+            </div>
+            <div className="p-6">
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                {draft.title && <h1 className="text-xl font-bold font-serif-display mb-4">{draft.title}</h1>}
+                {draft.content ? (
+                  <div dangerouslySetInnerHTML={{ __html: simpleMarkdownRender(draft.content) }} />
+                ) : (
+                  <p className="text-muted-foreground/50 italic">暂无内容</p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -161,7 +226,7 @@ export function StudioPage() {
 
 // 简易 Markdown 渲染（预览面板用）
 function simpleMarkdownRender(md: string): string {
-  if (!md) return '<p class="text-muted-foreground">暂无内容，点击「生成」开始创作</p>'
+  if (!md) return ''
   return md
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
