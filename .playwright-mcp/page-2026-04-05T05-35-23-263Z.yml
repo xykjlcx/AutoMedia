@@ -1,0 +1,65 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "AutoMedia AutoMedia" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "AutoMedia" [ref=e5]
+        - generic [ref=e6]: AutoMedia
+      - generic [ref=e7]:
+        - link "今日日报" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img [ref=e9]
+          - generic [ref=e12]: 今日日报
+        - link "历史" [ref=e13] [cursor=pointer]:
+          - /url: /history
+          - img [ref=e14]
+          - generic [ref=e17]: 历史
+        - link "收藏" [ref=e18] [cursor=pointer]:
+          - /url: /favorites
+          - img [ref=e19]
+          - generic [ref=e21]: 收藏
+        - link "汇总" [ref=e22] [cursor=pointer]:
+          - /url: /summary
+          - img [ref=e23]
+          - generic [ref=e25]: 汇总
+        - link "搜索" [ref=e26] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e27]
+          - generic [ref=e30]: 搜索
+        - link "Studio" [ref=e31] [cursor=pointer]:
+          - /url: /studio
+          - img [ref=e32]
+          - generic [ref=e34]: Studio
+        - link "设置" [ref=e35] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e36]
+          - generic [ref=e39]: 设置
+      - button "切换暗色" [ref=e40]:
+        - img [ref=e41]
+  - main [ref=e43]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - button "素材面板" [ref=e47]:
+          - img [ref=e48]
+        - generic [ref=e51]:
+          - button "📕 小红书" [ref=e52]:
+            - generic [ref=e53]: 📕
+            - generic [ref=e54]: 小红书
+          - button "🐦 Twitter" [ref=e55]:
+            - generic [ref=e56]: 🐦
+            - generic [ref=e57]: Twitter
+          - button "📖 公众号" [ref=e58]:
+            - generic [ref=e59]: 📖
+            - generic [ref=e60]: 公众号
+      - generic [ref=e61]:
+        - button "✨ 生成" [disabled] [ref=e62]:
+          - generic [ref=e63]: ✨
+          - generic [ref=e64]: 生成
+        - button "📋" [ref=e65]
+        - button "🖼" [ref=e66]
+        - button "📤" [ref=e67]
+        - button "预览面板" [ref=e68]:
+          - img [ref=e69]
+  - button "Open Next.js Dev Tools" [ref=e80] [cursor=pointer]:
+    - img [ref=e81]
+  - alert [ref=e84]

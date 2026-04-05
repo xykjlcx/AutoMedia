@@ -50,3 +50,4 @@ data/cards/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+public/fonts/

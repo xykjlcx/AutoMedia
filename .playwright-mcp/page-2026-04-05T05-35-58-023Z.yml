@@ -1,0 +1,941 @@
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "AutoMedia AutoMedia" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "AutoMedia" [ref=e5]
+        - generic [ref=e6]: AutoMedia
+      - generic [ref=e7]:
+        - link "今日日报" [active] [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img [ref=e9]
+          - generic [ref=e12]: 今日日报
+        - link "历史" [ref=e13] [cursor=pointer]:
+          - /url: /history
+          - img [ref=e14]
+          - generic [ref=e17]: 历史
+        - link "收藏" [ref=e18] [cursor=pointer]:
+          - /url: /favorites
+          - img [ref=e19]
+          - generic [ref=e21]: 收藏
+        - link "汇总" [ref=e22] [cursor=pointer]:
+          - /url: /summary
+          - img [ref=e23]
+          - generic [ref=e25]: 汇总
+        - link "搜索" [ref=e26] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e27]
+          - generic [ref=e30]: 搜索
+        - link "Studio" [ref=e31] [cursor=pointer]:
+          - /url: /studio
+          - img [ref=e32]
+          - generic [ref=e34]: Studio
+        - link "设置" [ref=e35] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e36]
+          - generic [ref=e39]: 设置
+      - button "切换暗色" [ref=e40]:
+        - img [ref=e41]
+  - main [ref=e43]:
+    - generic [ref=e209]:
+      - generic [ref=e210]:
+        - button "前一天" [ref=e211]:
+          - img [ref=e212]
+        - generic [ref=e214]:
+          - heading "2026年4月5日" [level=1] [ref=e215]
+          - paragraph [ref=e216]:
+            - text: 星期日
+            - generic [ref=e217]: 今天
+        - button "后一天" [disabled] [ref=e218]:
+          - img [ref=e219]
+      - separator [ref=e221]
+      - button "重新生成日报" [ref=e223]:
+        - img [ref=e224]
+        - generic [ref=e229]: 重新生成日报
+      - generic [ref=e230]:
+        - generic [ref=e232]:
+          - generic [ref=e233]:
+            - button "精选推荐 33" [ref=e234]:
+              - img [ref=e235]
+              - text: 精选推荐
+              - generic [ref=e238]: "33"
+            - button "全部资讯 97" [ref=e239]:
+              - img [ref=e240]
+              - text: 全部资讯
+              - generic [ref=e241]: "97"
+          - button "选择文章" [ref=e242]
+        - generic [ref=e243]:
+          - complementary [ref=e244]:
+            - generic [ref=e245]:
+              - heading "信息源" [level=3] [ref=e246]
+              - navigation [ref=e247]:
+                - button "全部来源 33" [ref=e248]:
+                  - generic [ref=e249]: 全部来源
+                  - generic [ref=e250]: "33"
+                - button "Hacker News 18" [ref=e251]:
+                  - generic [ref=e252]: Hacker News
+                  - generic [ref=e254]: "18"
+                - button "GitHub Trending 6" [ref=e255]:
+                  - generic [ref=e256]: GitHub Trending
+                  - generic [ref=e258]: "6"
+                - button "知乎热榜 4" [ref=e259]:
+                  - generic [ref=e260]: 知乎热榜
+                  - generic [ref=e262]: "4"
+                - button "36氪 3" [ref=e263]:
+                  - generic [ref=e264]: 36氪
+                  - generic [ref=e266]: "3"
+                - button "少数派 2" [ref=e267]:
+                  - generic [ref=e268]: 少数派
+                  - generic [ref=e270]: "2"
+          - generic [ref=e271]:
+            - paragraph [ref=e272]:
+              - text: 共 33 条
+              - generic [ref=e273]: （11 条未读）
+            - generic [ref=e274]:
+              - article [ref=e275]:
+                - generic [ref=e276]:
+                  - generic [ref=e277]:
+                    - generic [ref=e278]:
+                      - generic [ref=e279]:
+                        - generic [ref=e280]: 💻
+                        - generic [ref=e281]: GitHub Trending
+                      - generic [ref=e282]: · block
+                    - generic [ref=e283]:
+                      - generic [ref=e284]:
+                        - button "喜欢" [ref=e285]:
+                          - img [ref=e286]
+                        - button "不喜欢" [ref=e288]:
+                          - img [ref=e289]
+                      - button "取消收藏" [ref=e291]:
+                        - img [ref=e292]
+                  - heading "block/goose" [level=3] [ref=e294]:
+                    - link "block/goose" [ref=e295] [cursor=pointer]:
+                      - /url: https://github.com/block/goose
+                      - generic [ref=e296]: block/goose
+                      - img [ref=e297]
+                  - paragraph [ref=e301]: 开源AI编程助手goose超越代码建议，支持安装执行编辑测试
+                  - button "展开详情" [ref=e302]:
+                    - generic [ref=e303]: 展开详情
+                    - img [ref=e304]
+                  - generic [ref=e306]: Block团队开源的goose是一款可扩展的AI agent，用Rust语言编写，斩获35.7k星。该工具不止于代码建议，还能直接安装依赖、执行命令、编辑文件和运行测试，覆盖开发全流程。对全栈开发者而言，这意味着AI正从“辅助建议”进化为“直接执行”，可能重塑开发工作流。Rust高性能特性也保证了工具响应效率，值得关注其在实际项目中的生产力提升效果。
+              - article [ref=e307]:
+                - generic [ref=e308]:
+                  - generic [ref=e309]:
+                    - generic [ref=e310]:
+                      - generic [ref=e311]:
+                        - generic [ref=e312]: 💻
+                        - generic [ref=e313]: GitHub Trending
+                      - generic [ref=e314]: · microsoft
+                    - generic [ref=e315]:
+                      - generic [ref=e316]:
+                        - button "喜欢" [ref=e317]:
+                          - img [ref=e318]
+                        - button "不喜欢" [ref=e320]:
+                          - img [ref=e321]
+                      - button "收藏" [ref=e323]:
+                        - img [ref=e324]
+                  - heading "microsoft/agent-framework" [level=3] [ref=e326]:
+                    - link "microsoft/agent-framework" [ref=e327] [cursor=pointer]:
+                      - /url: https://github.com/microsoft/agent-framework
+                      - generic [ref=e328]: microsoft/agent-framework
+                      - img [ref=e329]
+                  - paragraph [ref=e333]: 微软发布企业级AI agent框架，支持Python和.NET多语言开发
+                  - button "展开详情" [ref=e334]:
+                    - generic [ref=e335]: 展开详情
+                    - img [ref=e336]
+                  - generic [ref=e338]: 微软推出的agent-framework获得了8.7k星，专为构建、编排和部署AI agent及多agent工作流设计，同时支持Python和.NET两大主流语言。作为企业级解决方案，它提供了更规范的开发范式和部署路径。对跨境技术团队来说，该框架降低了多语言协作的开发门槛，适合构建复杂的智能客服、自动化流程等企业应用。微软的背书也意味着更高的稳定性和长期维护保障。
+              - article [ref=e339]:
+                - generic [ref=e340]:
+                  - generic [ref=e341]:
+                    - generic [ref=e342]:
+                      - generic [ref=e343]:
+                        - generic [ref=e344]: 📰
+                        - generic [ref=e345]: Hacker News
+                      - generic [ref=e346]: · Anon84
+                    - generic [ref=e347]:
+                      - generic [ref=e348]:
+                        - button "喜欢" [ref=e349]:
+                          - img [ref=e350]
+                        - button "不喜欢" [ref=e352]:
+                          - img [ref=e353]
+                      - button "收藏" [ref=e355]:
+                        - img [ref=e356]
+                  - heading "Simple self-distillation improves code generation" [level=3] [ref=e358]:
+                    - link "Simple self-distillation improves code generation" [ref=e359] [cursor=pointer]:
+                      - /url: https://arxiv.org/abs/2604.01193
+                      - generic [ref=e360]: Simple self-distillation improves code generation
+                      - img [ref=e361]
+                  - paragraph [ref=e365]: 简单自蒸馏方法显著提升代码生成模型性能
+                  - button "展开详情" [ref=e366]:
+                    - generic [ref=e367]: 展开详情
+                    - img [ref=e368]
+                  - generic [ref=e370]: 研究表明，通过让代码生成模型从自身的高质量输出中学习（自蒸馏），可以显著提升模型性能，且方法简单易实现。对全栈开发者而言，这意味着AI代码助手的准确性将持续改善，可能进一步加速开发效率。该研究为AI辅助编程领域提供了实用的优化方向。
+              - article [ref=e371]:
+                - generic [ref=e372]:
+                  - generic [ref=e373]:
+                    - generic [ref=e375]:
+                      - generic [ref=e376]: 🔍
+                      - generic [ref=e377]: 知乎热榜
+                    - generic [ref=e378]:
+                      - generic [ref=e379]:
+                        - button "喜欢" [ref=e380]:
+                          - img [ref=e381]
+                        - button "不喜欢" [ref=e383]:
+                          - img [ref=e384]
+                      - button "收藏" [ref=e386]:
+                        - img [ref=e387]
+                  - heading "「同事.skill」爆火，工作经验、业务方法论会被AI轻易「窃取」吗？如因此被解雇会受到法律保护吗？" [level=3] [ref=e389]:
+                    - link "「同事.skill」爆火，工作经验、业务方法论会被AI轻易「窃取」吗？如因此被解雇会受到法律保护吗？" [ref=e390] [cursor=pointer]:
+                      - /url: https://www.zhihu.com/question/2023363667584927528
+                      - generic [ref=e391]: 「同事.skill」爆火，工作经验、业务方法论会被AI轻易「窃取」吗？如因此被解雇会受到法律保护吗？
+                      - img [ref=e392]
+                  - paragraph [ref=e396]: 「同事.skill」GitHub项目三天获千星，AI蒸馏职场技能引发法律争议。
+                  - button "展开详情" [ref=e397]:
+                    - generic [ref=e398]: 展开详情
+                    - img [ref=e399]
+                  - generic [ref=e401]: 「同事.skill」是2026年3月30日上线的GitHub项目，用户只需提供同事的飞书消息、钉钉文档、工作邮件等数据，即可通过AI生成可替代该同事工作的skill文件，三天内获上千星标。该工具让职场经验复制变得高效，引发劳动者对专属业务方法论被"窃取"的担忧。法律专业人士指出，此问题本质上属于劳动法律范畴，而非传统隐私或知识产权问题。为什么值得关注：这项技术对全栈开发者具有技术参考价值，同时也预示AI在职场应用的法律边界亟待明确，可能影响未来劳动关系的重新定义。
+              - article [ref=e402]:
+                - generic [ref=e403]:
+                  - generic [ref=e404]:
+                    - generic [ref=e406]:
+                      - generic [ref=e407]: 📊
+                      - generic [ref=e408]: 36氪
+                    - generic [ref=e409]:
+                      - generic [ref=e410]:
+                        - button "喜欢" [ref=e411]:
+                          - img [ref=e412]
+                        - button "不喜欢" [ref=e414]:
+                          - img [ref=e415]
+                      - button "收藏" [ref=e417]:
+                        - img [ref=e418]
+                  - heading "Anthropic宣布正式封杀OpenClaw" [level=3] [ref=e420]:
+                    - link "Anthropic宣布正式封杀OpenClaw" [ref=e421] [cursor=pointer]:
+                      - /url: https://www.36kr.com/newsflashes/3751993972802307
+                      - generic [ref=e422]: Anthropic宣布正式封杀OpenClaw
+                      - img [ref=e423]
+                  - paragraph [ref=e427]: Anthropic宣布正式封杀OpenClaw
+                  - button "展开详情" [ref=e428]:
+                    - generic [ref=e429]: 展开详情
+                    - img [ref=e430]
+                  - generic [ref=e432]: 美国大模型头部公司Anthropic旗下AI编程工具Claude Code负责人Boris Cherny发文称，美国西部时间4月4日中午12点起，Claude订阅服务将不再包含对OpenClaw等第三方工具的使用额度。团队一直在努力满足Claude需求的增长，而订阅并非为这些第三方工具的使用模式设计
+              - article [ref=e433]:
+                - generic [ref=e434]:
+                  - generic [ref=e435]:
+                    - generic [ref=e436]:
+                      - generic [ref=e437]:
+                        - generic [ref=e438]: 💻
+                        - generic [ref=e439]: GitHub Trending
+                      - generic [ref=e440]: · Blaizzy
+                    - generic [ref=e441]:
+                      - generic [ref=e442]:
+                        - button "喜欢" [ref=e443]:
+                          - img [ref=e444]
+                        - button "不喜欢" [ref=e446]:
+                          - img [ref=e447]
+                      - button "收藏" [ref=e449]:
+                        - img [ref=e450]
+                  - heading "Blaizzy/mlx-vlm" [level=3] [ref=e452]:
+                    - link "Blaizzy/mlx-vlm" [ref=e453] [cursor=pointer]:
+                      - /url: https://github.com/Blaizzy/mlx-vlm
+                      - generic [ref=e454]: Blaizzy/mlx-vlm
+                      - img [ref=e455]
+                  - paragraph [ref=e459]: MLX-VLM让Mac用户本地运行视觉语言模型进行推理和微调
+                  - button "展开详情" [ref=e460]:
+                    - generic [ref=e461]: 展开详情
+                    - img [ref=e462]
+                  - generic [ref=e464]: MLX-VLM是基于Apple MLX框架的视觉语言模型工具包，支持在Mac上本地运行VLM推理与微调。Python实现，目前获3.6k星。对于想利用苹果芯片强大GPU能力、同时保护数据隐私的开发者而言，是极具价值的本地部署方案，特别适合需要快速迭代视觉AI应用的跨境电商场景。
+              - article [ref=e465]:
+                - generic [ref=e466]:
+                  - generic [ref=e467]:
+                    - generic [ref=e468]:
+                      - generic [ref=e469]:
+                        - generic [ref=e470]: 💻
+                        - generic [ref=e471]: GitHub Trending
+                      - generic [ref=e472]: · onyx-dot-app
+                    - generic [ref=e473]:
+                      - generic [ref=e474]:
+                        - button "喜欢" [ref=e475]:
+                          - img [ref=e476]
+                        - button "不喜欢" [ref=e478]:
+                          - img [ref=e479]
+                      - button "收藏" [ref=e481]:
+                        - img [ref=e482]
+                  - heading "onyx-dot-app/onyx" [level=3] [ref=e484]:
+                    - link "onyx-dot-app/onyx" [ref=e485] [cursor=pointer]:
+                      - /url: https://github.com/onyx-dot-app/onyx
+                      - generic [ref=e486]: onyx-dot-app/onyx
+                      - img [ref=e487]
+                  - paragraph [ref=e491]: Onyx开源AI平台支持任意LLM的对话功能
+                  - button "展开详情" [ref=e492]:
+                    - generic [ref=e493]: 展开详情
+                    - img [ref=e494]
+                  - generic [ref=e496]: Onyx是一个功能丰富的开源AI对话平台，支持几乎所有主流大语言模型交互。项目获24k星、3.2k forks，采用Python开发。全栈开发者可借此快速搭建企业级AI应用，支持模型切换、多会话管理等特性。对于需要构建跨境AI客服或多语言交互系统的团队，Onyx提供了灵活的开源解决方案。
+              - article [ref=e497]:
+                - generic [ref=e498]:
+                  - generic [ref=e499]:
+                    - generic [ref=e500]:
+                      - generic [ref=e501]:
+                        - generic [ref=e502]: 📱
+                        - generic [ref=e503]: 少数派
+                      - generic [ref=e504]: · 少数派编辑部
+                    - generic [ref=e505]:
+                      - generic [ref=e506]:
+                        - button "喜欢" [ref=e507]:
+                          - img [ref=e508]
+                        - button "不喜欢" [ref=e510]:
+                          - img [ref=e511]
+                      - button "收藏" [ref=e513]:
+                        - img [ref=e514]
+                  - heading "派早报：Google 发布 Gemma 4 开源系列模型、智谱发布 GLM-5V-Turbo 多模态模型等" [level=3] [ref=e516]:
+                    - link "派早报：Google 发布 Gemma 4 开源系列模型、智谱发布 GLM-5V-Turbo 多模态模型等" [ref=e517] [cursor=pointer]:
+                      - /url: https://sspai.com/post/108209
+                      - generic [ref=e518]: 派早报：Google 发布 Gemma 4 开源系列模型、智谱发布 GLM-5V-Turbo 多模态模型等
+                      - img [ref=e519]
+                  - paragraph [ref=e523]: Google发布Gemma 4开源系列，强调参数效率与本地运行
+                  - button "展开详情" [ref=e524]:
+                    - generic [ref=e525]: 展开详情
+                    - img [ref=e526]
+                  - generic [ref=e528]: 4月2日Google发布Gemma 4开源系列模型，定位为最智能的开源模型产品线之一，基于Gemini技术体系构建。该系列提供E2B、E4B、26B MoE与另一个版本四种规模，重点强调「参数效率」与本地运行能力。同时智谱也发布GLM-5V-Turbo多模态模型。对开发者而言，Gemma 4的低参数高效能特性降低了本地部署门槛，为边缘计算和隐私敏感场景提供了新的开源选择。
+              - article [ref=e529]:
+                - generic [ref=e530]:
+                  - generic [ref=e531]:
+                    - generic [ref=e532]:
+                      - generic [ref=e533]:
+                        - generic [ref=e534]: 📱
+                        - generic [ref=e535]: 少数派
+                      - generic [ref=e536]: · Barryhimself
+                    - generic [ref=e537]:
+                      - generic [ref=e538]:
+                        - button "喜欢" [ref=e539]:
+                          - img [ref=e540]
+                        - button "不喜欢" [ref=e542]:
+                          - img [ref=e543]
+                      - button "收藏" [ref=e545]:
+                        - img [ref=e546]
+                  - heading "买前必看：千问 AI 眼镜 G1 自费长测" [level=3] [ref=e548]:
+                    - link "买前必看：千问 AI 眼镜 G1 自费长测" [ref=e549] [cursor=pointer]:
+                      - /url: https://sspai.com/post/108103
+                      - generic [ref=e550]: 买前必看：千问 AI 眼镜 G1 自费长测
+                      - img [ref=e551]
+                  - paragraph [ref=e555]: 千问AI眼镜G1对比RayBan Meta：国产AI眼镜评测
+                  - button "展开详情" [ref=e556]:
+                    - generic [ref=e557]: 展开详情
+                    - img [ref=e558]
+                  - generic [ref=e560]: 数码评测者自费对千问AI眼镜G1进行长期测试，与RayBan Meta一代对比。评测指出：外观设计单一（仅威灵顿框型）、可选SKU少、亮面镜框易沾指纹；相比之下Meta与RayBan、Oakley合作提供更丰富框型选择。评测保持客观中立，无商业合作。对于关注AI硬件发展的技术爱好者和跨境电商从业者，该评测提供了国产AI眼镜的实际使用反馈，有助于了解当前智能眼镜市场的产品差异。
+              - article [ref=e561]:
+                - generic [ref=e562]:
+                  - generic [ref=e563]:
+                    - generic [ref=e564]:
+                      - generic [ref=e566]:
+                        - generic [ref=e567]: 📰
+                        - generic [ref=e568]: Hacker News
+                      - generic [ref=e569]: · eichin
+                    - generic [ref=e570]:
+                      - generic [ref=e571]:
+                        - button "喜欢" [ref=e572]:
+                          - img [ref=e573]
+                        - button "不喜欢" [ref=e575]:
+                          - img [ref=e576]
+                      - button "收藏" [ref=e578]:
+                        - img [ref=e579]
+                  - heading "Claude Code Found a Linux Vulnerability Hidden for 23 Years" [level=3] [ref=e581]:
+                    - link "Claude Code Found a Linux Vulnerability Hidden for 23 Years" [ref=e582] [cursor=pointer]:
+                      - /url: https://mtlynch.io/claude-code-found-linux-vulnerability/
+                      - generic [ref=e583]: Claude Code Found a Linux Vulnerability Hidden for 23 Years
+                      - img [ref=e584]
+                  - paragraph [ref=e588]: Claude Code发现Linux隐藏23年漏洞，AI安全价值凸显
+                  - button "展开详情" [ref=e589]:
+                    - generic [ref=e590]: 展开详情
+                    - img [ref=e591]
+                  - generic [ref=e593]: Anthropic的Claude Code工具发现了一个在Linux内核中隐藏长达23年未被察觉的安全漏洞。此事件展示了AI代码审计在安全领域的巨大潜力，证明AI可有效识别传统方法难以发现的深层代码缺陷。对于关注AI辅助开发、安全工程的全栈开发者而言，标志着AI从代码助手向主动安全卫士的角色演进。
+              - article [ref=e594]:
+                - generic [ref=e595]:
+                  - generic [ref=e596]:
+                    - generic [ref=e597]:
+                      - generic [ref=e598]:
+                        - generic [ref=e599]: 💻
+                        - generic [ref=e600]: GitHub Trending
+                      - generic [ref=e601]: · Yeachan-Heo
+                    - generic [ref=e602]:
+                      - generic [ref=e603]:
+                        - button "喜欢" [ref=e604]:
+                          - img [ref=e605]
+                        - button "不喜欢" [ref=e607]:
+                          - img [ref=e608]
+                      - button "收藏" [ref=e610]:
+                        - img [ref=e611]
+                  - heading "Yeachan-Heo/oh-my-codex" [level=3] [ref=e613]:
+                    - link "Yeachan-Heo/oh-my-codex" [ref=e614] [cursor=pointer]:
+                      - /url: https://github.com/Yeachan-Heo/oh-my-codex
+                      - generic [ref=e615]: Yeachan-Heo/oh-my-codex
+                      - img [ref=e616]
+                  - paragraph [ref=e620]: oh-my-codex扩展Codex实现Agent团队协作与HUD界面
+                  - button "展开详情" [ref=e621]:
+                    - generic [ref=e622]: 展开详情
+                    - img [ref=e623]
+                  - generic [ref=e625]: OmX (Oh My codeX) 为Codex带来hooks、agent teams和HUDs等扩展能力，TypeScript实现，获15.6k星。开发者可构建多Agent协作系统，实现复杂任务分解与并行处理。对于需要自动化工作流和AI编排能力的开发者，这种模块化扩展方式能显著提升开发效率，特别适合技术变革驱动的全栈项目。
+              - article [ref=e626]:
+                - generic [ref=e627]:
+                  - generic [ref=e628]:
+                    - generic [ref=e629]:
+                      - generic [ref=e630]:
+                        - generic [ref=e631]: 📰
+                        - generic [ref=e632]: Hacker News
+                      - generic [ref=e633]: · greenstevester
+                    - generic [ref=e634]:
+                      - generic [ref=e635]:
+                        - button "喜欢" [ref=e636]:
+                          - img [ref=e637]
+                        - button "不喜欢" [ref=e639]:
+                          - img [ref=e640]
+                      - button "收藏" [ref=e642]:
+                        - img [ref=e643]
+                  - heading "April 2026 TLDR Setup for Ollama and Gemma 4 26B on a Mac mini" [level=3] [ref=e645]:
+                    - link "April 2026 TLDR Setup for Ollama and Gemma 4 26B on a Mac mini" [ref=e646] [cursor=pointer]:
+                      - /url: https://gist.github.com/greenstevester/fc49b4e60a4fef9effc79066c1033ae5
+                      - generic [ref=e647]: April 2026 TLDR Setup for Ollama and Gemma 4 26B on a Mac mini
+                      - img [ref=e648]
+                  - paragraph [ref=e652]: Mac mini本地运行Ollama和Gemma 4 26B模型的详细教程
+                  - button "展开详情" [ref=e653]:
+                    - generic [ref=e654]: 展开详情
+                    - img [ref=e655]
+                  - generic [ref=e657]: 2026年4月更新的教程，详解在Mac mini上本地部署Ollama和Gemma 4 26B模型的步骤。展示了消费级硬件运行大模型的能力，降低了AI推理的硬件门槛。对关注本地AI部署、隐私敏感型应用的开发者是实用指南，同时反映了端侧AI的发展趋势。
+              - article [ref=e658]:
+                - generic [ref=e659]:
+                  - generic [ref=e660]:
+                    - generic [ref=e661]:
+                      - generic [ref=e662]:
+                        - generic [ref=e663]: 📰
+                        - generic [ref=e664]: Hacker News
+                      - generic [ref=e665]: · franze
+                    - generic [ref=e666]:
+                      - generic [ref=e667]:
+                        - button "喜欢" [ref=e668]:
+                          - img [ref=e669]
+                        - button "不喜欢" [ref=e671]:
+                          - img [ref=e672]
+                      - button "收藏" [ref=e674]:
+                        - img [ref=e675]
+                  - 'heading "Show HN: Apfel – The free AI already on your Mac" [level=3] [ref=e677]':
+                    - 'link "Show HN: Apfel – The free AI already on your Mac" [ref=e678] [cursor=pointer]':
+                      - /url: https://apfel.franzai.com/
+                      - generic [ref=e679]: "Show HN: Apfel – The free AI already on your Mac"
+                      - img [ref=e680]
+                  - paragraph [ref=e684]: Apfel：Mac系统内置免费本地AI助手
+                  - button "展开详情" [ref=e685]:
+                    - generic [ref=e686]: 展开详情
+                    - img [ref=e687]
+                  - generic [ref=e689]: Apfel是一款面向Mac用户的免费AI工具，直接运行在本地设备上，无需订阅或付费。对于Mac全栈开发者来说，本地AI意味着更好的隐私保护和更快的响应速度，无需依赖云服务即可获得AI辅助。这一趋势表明操作系统厂商正在将AI能力深度整合到开发工具链中。
+              - article [ref=e690]:
+                - generic [ref=e691]:
+                  - generic [ref=e692]:
+                    - generic [ref=e693]:
+                      - generic [ref=e695]:
+                        - generic [ref=e696]: 📰
+                        - generic [ref=e697]: Hacker News
+                      - generic [ref=e698]: · jandeboevrie
+                    - generic [ref=e699]:
+                      - generic [ref=e700]:
+                        - button "喜欢" [ref=e701]:
+                          - img [ref=e702]
+                        - button "不喜欢" [ref=e704]:
+                          - img [ref=e705]
+                      - button "收藏" [ref=e707]:
+                        - img [ref=e708]
+                  - 'heading "SSH certificates: the better SSH experience" [level=3] [ref=e710]':
+                    - 'link "SSH certificates: the better SSH experience" [ref=e711] [cursor=pointer]':
+                      - /url: https://jpmens.net/2026/04/03/ssh-certificates-the-better-ssh-experience/
+                      - generic [ref=e712]: "SSH certificates: the better SSH experience"
+                      - img [ref=e713]
+                  - paragraph [ref=e717]: "SSH certificates: the better S"
+                  - button "展开详情" [ref=e718]:
+                    - generic [ref=e719]: 展开详情
+                    - img [ref=e720]
+                  - generic [ref=e722]: Comments on Hacker News | Source
+              - article [ref=e723]:
+                - generic [ref=e724]:
+                  - generic [ref=e725]:
+                    - generic [ref=e727]:
+                      - generic [ref=e728]: 📊
+                      - generic [ref=e729]: 36氪
+                    - generic [ref=e730]:
+                      - generic [ref=e731]:
+                        - button "喜欢" [ref=e732]:
+                          - img [ref=e733]
+                        - button "不喜欢" [ref=e735]:
+                          - img [ref=e736]
+                      - button "收藏" [ref=e738]:
+                        - img [ref=e739]
+                  - heading "千问AI打车上线两周：假期需求暴涨，周环比增长超1500%" [level=3] [ref=e741]:
+                    - link "千问AI打车上线两周：假期需求暴涨，周环比增长超1500%" [ref=e742] [cursor=pointer]:
+                      - /url: https://www.36kr.com/newsflashes/3751994306183681
+                      - generic [ref=e743]: 千问AI打车上线两周：假期需求暴涨，周环比增长超1500%
+                      - img [ref=e744]
+                  - paragraph [ref=e748]: 千问AI打车上线两周，清明假期订单环比暴涨1500%，复杂场景使用率突出
+                  - button "展开详情" [ref=e749]:
+                    - generic [ref=e750]: 展开详情
+                    - img [ref=e751]
+                  - generic [ref=e753]: 千问AI打车功能自3月23日上线以来，仅用不到两周时间，在清明假期实现订单量周环比增长超1500%，用户规模急速扩张。数据显示，用户更倾向于在多途经点、预约、个性化需求等复杂出行场景中调用AI能力，表明AI打车的实用价值正被用户认可。这一增长态势显示，AI在出行服务领域的落地应用已从尝鲜阶段迈向常态化使用阶段，后续市场表现值得持续关注。
+              - article [ref=e754]:
+                - generic [ref=e755]:
+                  - generic [ref=e756]:
+                    - generic [ref=e757]:
+                      - generic [ref=e759]:
+                        - generic [ref=e760]: 📰
+                        - generic [ref=e761]: Hacker News
+                      - generic [ref=e762]: · firloop
+                    - generic [ref=e763]:
+                      - generic [ref=e764]:
+                        - button "喜欢" [ref=e765]:
+                          - img [ref=e766]
+                        - button "不喜欢" [ref=e768]:
+                          - img [ref=e769]
+                      - button "收藏" [ref=e771]:
+                        - img [ref=e772]
+                  - 'heading "Tell HN: Anthropic no longer allowing Claude Code subscriptions to use OpenClaw" [level=3] [ref=e774]':
+                    - 'link "Tell HN: Anthropic no longer allowing Claude Code subscriptions to use OpenClaw" [ref=e775] [cursor=pointer]':
+                      - /url: https://news.ycombinator.com/item?id=47633396
+                      - generic [ref=e776]: "Tell HN: Anthropic no longer allowing Claude Code subscriptions to use OpenClaw"
+                      - img [ref=e777]
+                  - paragraph [ref=e781]: Anthropic禁止Claude Code订阅用户使用OpenClaw工具
+                  - button "展开详情" [ref=e782]:
+                    - generic [ref=e783]: 展开详情
+                    - img [ref=e784]
+                  - generic [ref=e786]: Hacker News社区爆料，Anthropic公司已停止允许Claude Code订阅用户使用OpenClaw工具。OpenClaw是一个第三方代码编辑/调试工具，此次政策调整可能影响依赖该工具的开发者的工作流程。具体原因尚不明确，可能是出于安全考虑或产品策略调整。此变化将促使开发者评估是否需要转向其他代码工具或直接使用Anthropic官方接口。
+              - article [ref=e787]:
+                - generic [ref=e788]:
+                  - generic [ref=e789]:
+                    - generic [ref=e790]:
+                      - generic [ref=e791]:
+                        - generic [ref=e792]: 📰
+                        - generic [ref=e793]: Hacker News
+                      - generic [ref=e794]: · kykeonaut
+                    - generic [ref=e795]:
+                      - generic [ref=e796]:
+                        - button "喜欢" [ref=e797]:
+                          - img [ref=e798]
+                        - button "不喜欢" [ref=e800]:
+                          - img [ref=e801]
+                      - button "收藏" [ref=e803]:
+                        - img [ref=e804]
+                  - heading "OpenClaw privilege escalation vulnerability" [level=3] [ref=e806]:
+                    - link "OpenClaw privilege escalation vulnerability" [ref=e807] [cursor=pointer]:
+                      - /url: https://nvd.nist.gov/vuln/detail/CVE-2026-33579
+                      - generic [ref=e808]: OpenClaw privilege escalation vulnerability
+                      - img [ref=e809]
+                  - paragraph [ref=e813]: OpenClaw发现权限提升漏洞影响系统安全
+                  - button "展开详情" [ref=e814]:
+                    - generic [ref=e815]: 展开详情
+                    - img [ref=e816]
+                  - generic [ref=e818]: OpenClaw软件中发现存在权限提升漏洞，可能允许攻击者获取系统高级权限。该漏洞已被报告并可能正在修复中。对于全栈开发者而言，这类系统层安全漏洞提示了及时更新依赖库和监控系统的重要性，建议开发者检查项目中的OpenClaw版本并关注官方安全公告。
+              - article [ref=e819]:
+                - generic [ref=e820]:
+                  - generic [ref=e821]:
+                    - generic [ref=e822]:
+                      - generic [ref=e823]:
+                        - generic [ref=e824]: 📰
+                        - generic [ref=e825]: Hacker News
+                      - generic [ref=e826]: · nickslaughter02
+                    - generic [ref=e827]:
+                      - generic [ref=e828]:
+                        - button "喜欢" [ref=e829]:
+                          - img [ref=e830]
+                        - button "不喜欢" [ref=e832]:
+                          - img [ref=e833]
+                      - button "收藏" [ref=e835]:
+                        - img [ref=e836]
+                  - heading "Critics say EU risks ceding control of its tech laws under U.S. pressure" [level=3] [ref=e838]:
+                    - link "Critics say EU risks ceding control of its tech laws under U.S. pressure" [ref=e839] [cursor=pointer]:
+                      - /url: https://www.politico.eu/article/fatal-decision-eu-slammed-for-caving-to-us-pressure-on-digital-rules/
+                      - generic [ref=e840]: Critics say EU risks ceding control of its tech laws under U.S. pressure
+                      - img [ref=e841]
+                  - paragraph [ref=e845]: Critics say EU risks ceding co
+                  - button "展开详情" [ref=e846]:
+                    - generic [ref=e847]: 展开详情
+                    - img [ref=e848]
+                  - generic [ref=e850]: Comments on Hacker News | Source
+              - article [ref=e851]:
+                - generic [ref=e852]:
+                  - generic [ref=e853]:
+                    - generic [ref=e854]:
+                      - generic [ref=e855]:
+                        - generic [ref=e856]: 📰
+                        - generic [ref=e857]: Hacker News
+                      - generic [ref=e858]: · uticus
+                    - generic [ref=e859]:
+                      - generic [ref=e860]:
+                        - button "喜欢" [ref=e861]:
+                          - img [ref=e862]
+                        - button "不喜欢" [ref=e864]:
+                          - img [ref=e865]
+                      - button "收藏" [ref=e867]:
+                        - img [ref=e868]
+                  - heading "Go on Embedded Systems and WebAssembly" [level=3] [ref=e870]:
+                    - link "Go on Embedded Systems and WebAssembly" [ref=e871] [cursor=pointer]:
+                      - /url: https://tinygo.org/
+                      - generic [ref=e872]: Go on Embedded Systems and WebAssembly
+                      - img [ref=e873]
+                  - paragraph [ref=e877]: Go on Embedded Systems and Web
+                  - button "展开详情" [ref=e878]:
+                    - generic [ref=e879]: 展开详情
+                    - img [ref=e880]
+                  - generic [ref=e882]: Comments on Hacker News | Source
+              - article [ref=e883]:
+                - generic [ref=e884]:
+                  - generic [ref=e885]:
+                    - generic [ref=e886]:
+                      - generic [ref=e887]:
+                        - generic [ref=e888]: 📰
+                        - generic [ref=e889]: Hacker News
+                      - generic [ref=e890]: · politelemon
+                    - generic [ref=e891]:
+                      - generic [ref=e892]:
+                        - button "喜欢" [ref=e893]:
+                          - img [ref=e894]
+                        - button "不喜欢" [ref=e896]:
+                          - img [ref=e897]
+                      - button "收藏" [ref=e899]:
+                        - img [ref=e900]
+                  - heading "Run Linux containers on Android, no root required" [level=3] [ref=e902]:
+                    - link "Run Linux containers on Android, no root required" [ref=e903] [cursor=pointer]:
+                      - /url: https://github.com/ExTV/Podroid
+                      - generic [ref=e904]: Run Linux containers on Android, no root required
+                      - img [ref=e905]
+                  - paragraph [ref=e909]: Run Linux containers on Androi
+                  - button "展开详情" [ref=e910]:
+                    - generic [ref=e911]: 展开详情
+                    - img [ref=e912]
+                  - generic [ref=e914]: Comments on Hacker News | Source
+              - article [ref=e915]:
+                - generic [ref=e916]:
+                  - generic [ref=e917]:
+                    - generic [ref=e918]:
+                      - generic [ref=e919]:
+                        - generic [ref=e920]: 📰
+                        - generic [ref=e921]: Hacker News
+                      - generic [ref=e922]: · upofadown
+                    - generic [ref=e923]:
+                      - generic [ref=e924]:
+                        - button "喜欢" [ref=e925]:
+                          - img [ref=e926]
+                        - button "不喜欢" [ref=e928]:
+                          - img [ref=e929]
+                      - button "收藏" [ref=e931]:
+                        - img [ref=e932]
+                  - heading "Iran strikes leave Amazon availability zones \"hard down\" in Bahrain and Dubai" [level=3] [ref=e934]:
+                    - link "Iran strikes leave Amazon availability zones \"hard down\" in Bahrain and Dubai" [ref=e935] [cursor=pointer]:
+                      - /url: https://www.bigtechnology.com/p/iran-strikes-leave-amazon-availability
+                      - generic [ref=e936]: Iran strikes leave Amazon availability zones "hard down" in Bahrain and Dubai
+                      - img [ref=e937]
+                  - paragraph [ref=e941]: Iran strikes leave Amazon avai
+                  - button "展开详情" [ref=e942]:
+                    - generic [ref=e943]: 展开详情
+                    - img [ref=e944]
+                  - generic [ref=e946]: Comments on Hacker News | Source
+              - article [ref=e947]:
+                - generic [ref=e948]:
+                  - generic [ref=e949]:
+                    - generic [ref=e950]:
+                      - generic [ref=e951]:
+                        - generic [ref=e952]: 📰
+                        - generic [ref=e953]: Hacker News
+                      - generic [ref=e954]: · gpi
+                    - generic [ref=e955]:
+                      - generic [ref=e956]:
+                        - button "喜欢" [ref=e957]:
+                          - img [ref=e958]
+                        - button "不喜欢" [ref=e960]:
+                          - img [ref=e961]
+                      - button "收藏" [ref=e963]:
+                        - img [ref=e964]
+                  - heading "How many products does Microsoft have named 'Copilot'?" [level=3] [ref=e966]:
+                    - link "How many products does Microsoft have named 'Copilot'?" [ref=e967] [cursor=pointer]:
+                      - /url: https://teybannerman.com/strategy/2026/03/31/how-many-microsoft-copilot-are-there.html
+                      - generic [ref=e968]: How many products does Microsoft have named 'Copilot'?
+                      - img [ref=e969]
+                  - paragraph [ref=e973]: 微软Copilot品牌遍地开花，数量引发热议
+                  - button "展开详情" [ref=e974]:
+                    - generic [ref=e975]: 展开详情
+                    - img [ref=e976]
+                  - generic [ref=e978]: 微软将Copilot名称应用于大量产品和服务，包括Copilot for Microsoft 365、Windows Copilot、GitHub Copilot等，引发社区对品牌策略的讨论。此现象反映了微软在AI时代的全面布局策略，以及大型科技公司通过统一品牌加速AI产品市场渗透的营销手段。对于关注AI产品化和品牌战略的开发者，具有参考价值。
+              - article [ref=e979]:
+                - generic [ref=e980]:
+                  - generic [ref=e981]:
+                    - generic [ref=e982]:
+                      - generic [ref=e983]:
+                        - generic [ref=e984]: 📰
+                        - generic [ref=e985]: Hacker News
+                      - generic [ref=e986]: · veqq
+                    - generic [ref=e987]:
+                      - generic [ref=e988]:
+                        - button "喜欢" [ref=e989]:
+                          - img [ref=e990]
+                        - button "不喜欢" [ref=e992]:
+                          - img [ref=e993]
+                      - button "收藏" [ref=e995]:
+                        - img [ref=e996]
+                  - heading "Why are we still using Markdown?" [level=3] [ref=e998]:
+                    - link "Why are we still using Markdown?" [ref=e999] [cursor=pointer]:
+                      - /url: https://bgslabs.org/blog/why-are-we-using-markdown/
+                      - generic [ref=e1000]: Why are we still using Markdown?
+                      - img [ref=e1001]
+                  - paragraph [ref=e1005]: Why are we still using Markdow
+                  - button "展开详情" [ref=e1006]:
+                    - generic [ref=e1007]: 展开详情
+                    - img [ref=e1008]
+                  - generic [ref=e1010]: Comments on Hacker News | Source
+              - article [ref=e1011]:
+                - generic [ref=e1012]:
+                  - generic [ref=e1013]:
+                    - generic [ref=e1015]:
+                      - generic [ref=e1016]: 🔍
+                      - generic [ref=e1017]: 知乎热榜
+                    - generic [ref=e1018]:
+                      - generic [ref=e1019]:
+                        - button "喜欢" [ref=e1020]:
+                          - img [ref=e1021]
+                        - button "不喜欢" [ref=e1023]:
+                          - img [ref=e1024]
+                      - button "收藏" [ref=e1026]:
+                        - img [ref=e1027]
+                  - heading "工控上位机程序只能用c#吗?" [level=3] [ref=e1029]:
+                    - link "工控上位机程序只能用c#吗?" [ref=e1030] [cursor=pointer]:
+                      - /url: https://www.zhihu.com/question/589211301
+                      - generic [ref=e1031]: 工控上位机程序只能用c#吗?
+                      - img [ref=e1032]
+                  - paragraph [ref=e1036]: 工控上位机开发语言选择：除C#外JavaScript/Vue是否可行
+                  - button "展开详情" [ref=e1037]:
+                    - generic [ref=e1038]: 展开详情
+                    - img [ref=e1039]
+                  - generic [ref=e1041]: 工控上位机开发并非只能用C#，实际上有多种选择。C#因成熟的.NET生态、良好的Windows兼容性和丰富的工控库而流行，但JavaScript配合Vue框架理论上也可用于上位机开发，尤其适合需要Web界面的场景。不过需考虑实时性要求、工业协议支持、运行稳定性及性能等因素。为什么值得关注：对于全栈开发者而言，了解不同技术栈在工控领域的适用性，可帮助选择更合适的技术方案，平衡开发效率与工业场景需求。
+              - article [ref=e1042]:
+                - generic [ref=e1043]:
+                  - generic [ref=e1044]:
+                    - generic [ref=e1045]:
+                      - generic [ref=e1047]:
+                        - generic [ref=e1048]: 📰
+                        - generic [ref=e1049]: Hacker News
+                      - generic [ref=e1050]: · madman_dev
+                    - generic [ref=e1051]:
+                      - generic [ref=e1052]:
+                        - button "喜欢" [ref=e1053]:
+                          - img [ref=e1054]
+                        - button "不喜欢" [ref=e1056]:
+                          - img [ref=e1057]
+                      - button "收藏" [ref=e1059]:
+                        - img [ref=e1060]
+                  - heading "European alternatives to Google, Apple, Dropbox and 120 US apps" [level=3] [ref=e1062]:
+                    - link "European alternatives to Google, Apple, Dropbox and 120 US apps" [ref=e1063] [cursor=pointer]:
+                      - /url: https://only-eu.eu/en/
+                      - generic [ref=e1064]: European alternatives to Google, Apple, Dropbox and 120 US apps
+                      - img [ref=e1065]
+                  - paragraph [ref=e1069]: HN整理120款美国应用的欧洲替代品，涵盖搜索到云存储
+                  - button "展开详情" [ref=e1070]:
+                    - generic [ref=e1071]: 展开详情
+                    - img [ref=e1072]
+                  - generic [ref=e1074]: Hacker News社区讨论整理了针对Google、Apple、Dropbox等120款美国科技产品的欧洲替代方案，包括Qwant搜索、Firefox浏览器、Nextcloud云存储等。这反映了用户对数据隐私和数字主权的重视，以及对欧盟科技生态的兴趣。对开发者而言，了解这些替代品有助于构建更符合欧洲用户隐私期待的跨境应用。
+              - article [ref=e1075]:
+                - generic [ref=e1076]:
+                  - generic [ref=e1077]:
+                    - generic [ref=e1079]:
+                      - generic [ref=e1080]: 🔍
+                      - generic [ref=e1081]: 知乎热榜
+                    - generic [ref=e1082]:
+                      - generic [ref=e1083]:
+                        - button "喜欢" [ref=e1084]:
+                          - img [ref=e1085]
+                        - button "不喜欢" [ref=e1087]:
+                          - img [ref=e1088]
+                      - button "收藏" [ref=e1090]:
+                        - img [ref=e1091]
+                  - heading "当下的AI是不是被过度神化了？" [level=3] [ref=e1093]:
+                    - link "当下的AI是不是被过度神化了？" [ref=e1094] [cursor=pointer]:
+                      - /url: https://www.zhihu.com/question/641916009
+                      - generic [ref=e1095]: 当下的AI是不是被过度神化了？
+                      - img [ref=e1096]
+                  - paragraph [ref=e1100]: AI热潮中的理性反思：是技术革命还是过度炒作
+                  - button "展开详情" [ref=e1101]:
+                    - generic [ref=e1102]: 展开详情
+                    - img [ref=e1103]
+                  - generic [ref=e1105]: 当前AI能力与公众期待存在明显落差，媒体夸大和资本助推使得AI被塑造成无所不能的存在，而现实中AI仍存在逻辑推理薄弱、幻觉问题频发、场景落地困难等局限。科幻作品中的通用人工智能与当前基于大语言模型的专用AI走的是不同技术路线。为什么值得关注：理性看待AI能力边界有助于避免投资过热和期望落差，推动技术健康发展和合理应用。
+              - article [ref=e1106]:
+                - generic [ref=e1107]:
+                  - generic [ref=e1108]:
+                    - generic [ref=e1109]:
+                      - generic [ref=e1111]:
+                        - generic [ref=e1112]: 📰
+                        - generic [ref=e1113]: Hacker News
+                      - generic [ref=e1114]: · chrisjj
+                    - generic [ref=e1115]:
+                      - generic [ref=e1116]:
+                        - button "喜欢" [ref=e1117]:
+                          - img [ref=e1118]
+                        - button "不喜欢" [ref=e1120]:
+                          - img [ref=e1121]
+                      - button "收藏" [ref=e1123]:
+                        - img [ref=e1124]
+                  - heading "NHS staff refusing to use FDP over Palantir ethical concerns" [level=3] [ref=e1126]:
+                    - link "NHS staff refusing to use FDP over Palantir ethical concerns" [ref=e1127] [cursor=pointer]:
+                      - /url: https://www.freevacy.com/news/financial-times/nhs-staff-refusing-to-use-fdp-over-palantir-ethical-concerns/7272
+                      - generic [ref=e1128]: NHS staff refusing to use FDP over Palantir ethical concerns
+                      - img [ref=e1129]
+                  - paragraph [ref=e1133]: NHS员工因Palantir争议拒用Federated Data Platform
+                  - button "展开详情" [ref=e1134]:
+                    - generic [ref=e1135]: 展开详情
+                    - img [ref=e1136]
+                  - generic [ref=e1138]: 英国国家医疗服务体系员工拒绝使用Federated Data Platform，因其核心承包商Palantir存在数据隐私和军事监控争议。员工担心患者敏感数据被商业公司掌控。这是公共医疗数据治理与科技公司伦理责任的典型冲突案例，对关注医疗AI和数据合规的开发者具有重要参考价值。
+              - article [ref=e1139]:
+                - generic [ref=e1140]:
+                  - generic [ref=e1141]:
+                    - generic [ref=e1142]:
+                      - generic [ref=e1144]:
+                        - generic [ref=e1145]: 💻
+                        - generic [ref=e1146]: GitHub Trending
+                      - generic [ref=e1147]: · siddharthvaddem
+                    - generic [ref=e1148]:
+                      - generic [ref=e1149]:
+                        - button "喜欢" [ref=e1150]:
+                          - img [ref=e1151]
+                        - button "不喜欢" [ref=e1153]:
+                          - img [ref=e1154]
+                      - button "收藏" [ref=e1156]:
+                        - img [ref=e1157]
+                  - heading "siddharthvaddem/openscreen" [level=3] [ref=e1159]:
+                    - link "siddharthvaddem/openscreen" [ref=e1160] [cursor=pointer]:
+                      - /url: https://github.com/siddharthvaddem/openscreen
+                      - generic [ref=e1161]: siddharthvaddem/openscreen
+                      - img [ref=e1162]
+                  - paragraph [ref=e1166]: openscreen开源屏幕录制工具可替代Screen Studio
+                  - button "展开详情" [ref=e1167]:
+                    - generic [ref=e1168]: 展开详情
+                    - img [ref=e1169]
+                  - generic [ref=e1171]: openscreen是完全免费开源的屏幕录制软件，TypeScript实现，获20k星，无水印可商用。作为Screen Studio的开源替代方案，它让开发者无需订阅即可制作高质量产品演示。对于需要制作技术教程、Demo视频的全栈开发者来说，这是降本增效的实用工具，尤其适合跨境电商产品展示内容制作。
+              - article [ref=e1172]:
+                - generic [ref=e1173]:
+                  - generic [ref=e1174]:
+                    - generic [ref=e1177]:
+                      - generic [ref=e1178]: 📊
+                      - generic [ref=e1179]: 36氪
+                    - generic [ref=e1180]:
+                      - generic [ref=e1181]:
+                        - button "喜欢" [ref=e1182]:
+                          - img [ref=e1183]
+                        - button "不喜欢" [ref=e1185]:
+                          - img [ref=e1186]
+                      - button "收藏" [ref=e1188]:
+                        - img [ref=e1189]
+                  - heading "马斯克要求参与SpaceX IPO的公司购买Grok" [level=3] [ref=e1191]:
+                    - link "马斯克要求参与SpaceX IPO的公司购买Grok" [ref=e1192] [cursor=pointer]:
+                      - /url: https://www.36kr.com/newsflashes/3751856193044993
+                      - generic [ref=e1193]: 马斯克要求参与SpaceX IPO的公司购买Grok
+                      - img [ref=e1194]
+                  - paragraph [ref=e1198]: 马斯克要求参与SpaceX IPO的公司必须购买其AI产品Grok
+                  - button "展开详情" [ref=e1199]:
+                    - generic [ref=e1200]: 展开详情
+                    - img [ref=e1201]
+                  - generic [ref=e1203]: 据报道，马斯克要求计划参与SpaceX IPO的公司购买其AI聊天机器人Grok。这一要求引发外界对利益冲突和商业伦理的担忧。SpaceX作为马斯克旗下的明星企业，其IPO备受市场关注，而在此过程中捆绑销售自有AI产品，被质疑是利用控股地位进行利益输送的可能性。此举或对SpaceX的IPO进程和估值产生影响，具体进展有待进一步观察。
+              - article [ref=e1204]:
+                - generic [ref=e1205]:
+                  - generic [ref=e1206]:
+                    - generic [ref=e1207]:
+                      - generic [ref=e1209]:
+                        - generic [ref=e1210]: 📰
+                        - generic [ref=e1211]: Hacker News
+                      - generic [ref=e1212]: · macleginn
+                    - generic [ref=e1213]:
+                      - generic [ref=e1214]:
+                        - button "喜欢" [ref=e1215]:
+                          - img [ref=e1216]
+                        - button "不喜欢" [ref=e1218]:
+                          - img [ref=e1219]
+                      - button "收藏" [ref=e1221]:
+                        - img [ref=e1222]
+                  - heading "Author of \"Careless People\" banned from saying anything negative about Meta" [level=3] [ref=e1224]:
+                    - link "Author of \"Careless People\" banned from saying anything negative about Meta" [ref=e1225] [cursor=pointer]:
+                      - /url: https://www.thetimes.com/uk/technology-uk/article/sarah-wynn-williams-careless-people-meta-nrffdfpmf
+                      - generic [ref=e1226]: Author of "Careless People" banned from saying anything negative about Meta
+                      - img [ref=e1227]
+                  - paragraph [ref=e1231]: 《Careless People》作者被曝签署协议禁止批评Meta
+                  - button "展开详情" [ref=e1232]:
+                    - generic [ref=e1233]: 展开详情
+                    - img [ref=e1234]
+                  - generic [ref=e1236]: Meta前高管Sarah Wynn-Williams出版《Careless People》揭露Facebook内部运作后，被曝签署协议禁止发表负面言论。此事件引发关于企业权力边界与个人言论自由的讨论。在AI与社交媒体深度融合的时代，科技巨头的潜在影响力远超想象，所有关注技术伦理的开发者都应留意此类事件。
+              - article [ref=e1237]:
+                - generic [ref=e1238]:
+                  - generic [ref=e1239]:
+                    - generic [ref=e1240]:
+                      - generic [ref=e1242]:
+                        - generic [ref=e1243]: 📰
+                        - generic [ref=e1244]: Hacker News
+                      - generic [ref=e1245]: · Jaso1024
+                    - generic [ref=e1246]:
+                      - generic [ref=e1247]:
+                        - button "喜欢" [ref=e1248]:
+                          - img [ref=e1249]
+                        - button "不喜欢" [ref=e1251]:
+                          - img [ref=e1252]
+                      - button "收藏" [ref=e1254]:
+                        - img [ref=e1255]
+                  - 'heading "Show HN: A game where you build a GPU" [level=3] [ref=e1257]':
+                    - 'link "Show HN: A game where you build a GPU" [ref=e1258] [cursor=pointer]':
+                      - /url: https://jaso1024.com/mvidia/
+                      - generic [ref=e1259]: "Show HN: A game where you build a GPU"
+                      - img [ref=e1260]
+                  - paragraph [ref=e1264]: Show HN推出GPU模拟构建游戏助力理解硬件原理
+                  - button "展开详情" [ref=e1265]:
+                    - generic [ref=e1266]: 展开详情
+                    - img [ref=e1267]
+                  - generic [ref=e1269]: 一款名为'A game where you build a GPU'的项目在Hacker News引发关注，让用户通过游戏方式从零开始构建GPU。该项目旨在以交互式教学帮助开发者理解GPU架构和渲染管线。对于想深入了解硬件的全栈开发者，这是一个理论与实践结合的有趣工具，也展示了开源社区在技术教育上的创意。
+              - article [ref=e1270]:
+                - generic [ref=e1271]:
+                  - generic [ref=e1272]:
+                    - generic [ref=e1273]:
+                      - generic [ref=e1275]:
+                        - generic [ref=e1276]: 📰
+                        - generic [ref=e1277]: Hacker News
+                      - generic [ref=e1278]: · naves
+                    - generic [ref=e1279]:
+                      - generic [ref=e1280]:
+                        - button "喜欢" [ref=e1281]:
+                          - img [ref=e1282]
+                        - button "不喜欢" [ref=e1284]:
+                          - img [ref=e1285]
+                      - button "收藏" [ref=e1287]:
+                        - img [ref=e1288]
+                  - heading "Apple approves driver that lets Nvidia eGPUs work with Arm Macs" [level=3] [ref=e1290]:
+                    - link "Apple approves driver that lets Nvidia eGPUs work with Arm Macs" [ref=e1291] [cursor=pointer]:
+                      - /url: https://www.theverge.com/tech/907003/apple-approves-driver-that-lets-nvidia-egpus-work-with-arm-macs
+                      - generic [ref=e1292]: Apple approves driver that lets Nvidia eGPUs work with Arm Macs
+                      - img [ref=e1293]
+                  - paragraph [ref=e1297]: 苹果批准Nvidia eGPU驱动，Arm Mac获得图形扩展
+                  - button "展开详情" [ref=e1298]:
+                    - generic [ref=e1299]: 展开详情
+                    - img [ref=e1300]
+                  - generic [ref=e1302]: 苹果已批准允许Nvidia显卡通过eGPU在Apple Silicon Mac上工作的驱动程序。此举结束了Apple Silicon Mac对Nvidia eGPU支持受限的局面，对需要强大图形性能的机器学习开发、3D渲染或游戏开发场景意义重大。开发者终于可以在M系列芯片Mac上灵活使用高性能外部显卡。
+              - article [ref=e1303]:
+                - generic [ref=e1304]:
+                  - generic [ref=e1305]:
+                    - generic [ref=e1308]:
+                      - generic [ref=e1309]: 🔍
+                      - generic [ref=e1310]: 知乎热榜
+                    - generic [ref=e1311]:
+                      - generic [ref=e1312]:
+                        - button "喜欢" [ref=e1313]:
+                          - img [ref=e1314]
+                        - button "不喜欢" [ref=e1316]:
+                          - img [ref=e1317]
+                      - button "收藏" [ref=e1319]:
+                        - img [ref=e1320]
+                  - heading "做小生意真的比打工强吗？" [level=3] [ref=e1322]:
+                    - link "做小生意真的比打工强吗？" [ref=e1323] [cursor=pointer]:
+                      - /url: https://www.zhihu.com/question/22394536
+                      - generic [ref=e1324]: 做小生意真的比打工强吗？
+                      - img [ref=e1325]
+                  - paragraph [ref=e1329]: 职场人困惑：打工瓶颈期转做小生意是否更好
+                  - button "展开详情" [ref=e1330]:
+                    - generic [ref=e1331]: 展开详情
+                    - img [ref=e1332]
+                  - generic [ref=e1334]: 一位没有生意经验但感到打工遇到瓶颈的职场人，寻求关于转型的理性建议。提问者明确希望获得实质性讨论，而非吐槽式回应。该话题触及许多人在职业发展中面临的共同困境：稳定工作与创业风险之间的权衡。对于关注职业规划和经济趋势的读者，这是一个值得深入思考的现实问题，涉及收入稳定性、个人成长空间、风险承担能力等多重因素。
+  - button "Open Next.js Dev Tools" [ref=e75] [cursor=pointer]:
+    - img [ref=e76]
+  - alert [ref=e79]

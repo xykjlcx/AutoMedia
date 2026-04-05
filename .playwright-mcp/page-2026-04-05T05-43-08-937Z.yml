@@ -1,0 +1,83 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "AutoMedia AutoMedia" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "AutoMedia" [ref=e5]
+        - generic [ref=e6]: AutoMedia
+      - generic [ref=e7]:
+        - link "今日日报" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img [ref=e9]
+          - generic [ref=e12]: 今日日报
+        - link "历史" [ref=e13] [cursor=pointer]:
+          - /url: /history
+          - img [ref=e14]
+          - generic [ref=e17]: 历史
+        - link "收藏" [ref=e18] [cursor=pointer]:
+          - /url: /favorites
+          - img [ref=e19]
+          - generic [ref=e21]: 收藏
+        - link "汇总" [ref=e22] [cursor=pointer]:
+          - /url: /summary
+          - img [ref=e23]
+          - generic [ref=e25]: 汇总
+        - link "搜索" [ref=e26] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e27]
+          - generic [ref=e30]: 搜索
+        - link "Studio" [ref=e31] [cursor=pointer]:
+          - /url: /studio
+          - img [ref=e32]
+          - generic [ref=e34]: Studio
+        - link "设置" [ref=e35] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e36]
+          - generic [ref=e39]: 设置
+      - button "切换暗色" [ref=e40]:
+        - img [ref=e41]
+  - main [ref=e43]:
+    - generic [ref=e46]:
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - button "素材面板" [ref=e49]:
+            - img [ref=e50]
+          - generic [ref=e54]:
+            - button "📕 小红书" [ref=e55]:
+              - generic [ref=e56]: 📕
+              - generic [ref=e57]: 小红书
+            - button "🐦 Twitter" [ref=e58]:
+              - generic [ref=e59]: 🐦
+              - generic [ref=e60]: Twitter
+            - button "📖 公众号" [ref=e61]:
+              - generic [ref=e62]: 📖
+              - generic [ref=e63]: 公众号
+        - button "预览" [ref=e64]:
+          - img [ref=e65]
+          - generic [ref=e68]: 预览
+      - generic [ref=e70]:
+        - generic [ref=e72]:
+          - textbox "输入标题..." [ref=e73]
+          - textbox "从这里开始写正文..." [ref=e75]
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - text: 正文字数 0
+            - generic [ref=e78]: / 1000
+          - generic [ref=e79]: Markdown 格式
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - button "复制" [ref=e82]:
+            - img [ref=e83]
+            - generic [ref=e86]: 复制
+          - button "分享卡片" [ref=e87]:
+            - img [ref=e88]
+            - generic [ref=e92]: 分享卡片
+          - button "导出" [ref=e93]:
+            - img [ref=e94]
+            - generic [ref=e97]: 导出
+        - button "AI 生成" [disabled] [ref=e98]:
+          - img [ref=e99]
+          - generic [ref=e102]: AI 生成
+  - button "Open Next.js Dev Tools" [ref=e108] [cursor=pointer]:
+    - img [ref=e109]
+  - alert [ref=e112]
