@@ -5,11 +5,12 @@ import { useSearchParams } from 'next/navigation'
 import { SourcePicker } from './source-picker'
 import { DraftEditor } from './draft-editor'
 import { PlatformSelector } from './platform-selector'
-import type { Platform } from './platform-selector'
 import { CardPreview } from './card-preview'
 import { ExportDialog } from './export-dialog'
-import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Download, Loader2 } from 'lucide-react'
+import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Download, Loader2, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { DraftHistory } from './draft-history'
+import type { Platform } from './platform-selector'
 
 interface DraftState {
   id: string | null
@@ -30,6 +31,8 @@ export function StudioPage() {
   })
   const [leftOpen, setLeftOpen] = useState(false)
   const [rightOpen, setRightOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
   const [generating, setGenerating] = useState(false)
   const [showCardPreview, setShowCardPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
@@ -68,8 +71,43 @@ export function StudioPage() {
       })
       const { id } = await res.json()
       setDraft(prev => ({ ...prev, id }))
+      // 新草稿创建后刷新历史列表
+      setHistoryRefreshKey(k => k + 1)
       return id
     }
+  }
+
+  // 加载指定草稿到编辑器
+  const loadDraft = async (id: string) => {
+    const res = await fetch(`/api/studio/drafts/${id}`)
+    if (!res.ok) return
+    const data = await res.json()
+    setDraft({
+      id: data.id,
+      platform: data.platform as Platform,
+      title: data.title ?? '',
+      content: data.content ?? '',
+      sourceIds: (data.sources ?? []).map((s: { itemId: string }) => s.itemId),
+    })
+    // 打开素材面板（如果有素材）
+    if (data.sources?.length > 0) setLeftOpen(true)
+  }
+
+  // 新建空草稿
+  const newDraft = () => {
+    setDraft(prev => ({
+      id: null,
+      platform: prev.platform,
+      title: '',
+      content: '',
+      sourceIds: [],
+    }))
+  }
+
+  // 删除草稿后处理
+  const handleDraftDeleted = (id: string) => {
+    if (draft.id === id) newDraft()
+    setHistoryRefreshKey(k => k + 1)
   }
 
   // AI 生成
@@ -106,6 +144,18 @@ export function StudioPage() {
     <div className="h-[calc(100vh-3.5rem)] flex flex-col bg-background">
       {/* 主体三栏 */}
       <div className="flex-1 flex overflow-hidden">
+        {/* 草稿历史抽屉 */}
+        {historyOpen && (
+          <DraftHistory
+            currentDraftId={draft.id}
+            onSelect={async (id) => { await loadDraft(id); setHistoryOpen(false) }}
+            onNew={() => { newDraft(); setHistoryOpen(false) }}
+            onDelete={handleDraftDeleted}
+            refreshKey={historyRefreshKey}
+            onClose={() => setHistoryOpen(false)}
+          />
+        )}
+
         {/* 左侧：素材面板 */}
         {leftOpen && (
           <div className="w-72 border-r border-border/60 overflow-y-auto shrink-0 bg-card">
@@ -125,6 +175,16 @@ export function StudioPage() {
           {/* 编辑器头部 */}
           <div className="border-b border-border/60 px-4 py-2.5 flex items-center justify-between bg-card/50">
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setHistoryOpen(!historyOpen)}
+                className={cn(
+                  'p-1.5 rounded-md transition-colors',
+                  historyOpen ? 'bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)]' : 'hover:bg-muted text-muted-foreground'
+                )}
+                title="草稿历史"
+              >
+                <History className="size-4" />
+              </button>
               <button
                 onClick={() => setLeftOpen(!leftOpen)}
                 className={cn(
