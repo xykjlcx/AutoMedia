@@ -1,6 +1,7 @@
 "use client"
 
 import { X, FileText, Code } from 'lucide-react'
+import { trackEvent } from '@/components/hooks/use-track-event'
 
 interface ExportDialogProps {
   draftId: string
@@ -9,6 +10,7 @@ interface ExportDialogProps {
 
 export function ExportDialog({ draftId, onClose }: ExportDialogProps) {
   const handleExport = async (format: 'html' | 'markdown') => {
+    trackEvent('export_content', 'draft', draftId, { format })
     const res = await fetch('/api/studio/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

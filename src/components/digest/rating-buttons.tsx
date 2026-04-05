@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react"
 import { ThumbsUp, ThumbsDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { trackEvent } from "@/components/hooks/use-track-event"
 
 interface RatingButtonsProps {
   digestItemId: string
@@ -26,6 +27,7 @@ export function RatingButtons({ digestItemId, initialRating = null }: RatingButt
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ digestItemId, rating: finalRating }),
         })
+        trackEvent(`rating_${finalRating}`, 'digest_item', digestItemId)
       }
     } catch {
       setRating(rating)

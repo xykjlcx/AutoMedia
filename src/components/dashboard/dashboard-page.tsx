@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { useReadingPosition } from "@/components/hooks/use-reading-position"
+import { trackEvent } from "@/components/hooks/use-track-event"
 
 interface StatsData {
   period: { start: string; end: string }
@@ -37,6 +38,11 @@ export function DashboardPage() {
 
   // 阅读位置记忆：week/month 各自独立
   useReadingPosition("/dashboard", period)
+
+  // 页面访问埋点（仅首次 mount）
+  useEffect(() => {
+    trackEvent('visit_dashboard', 'page', '/dashboard')
+  }, [])
 
   useEffect(() => {
     setLoading(true)

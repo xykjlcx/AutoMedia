@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Loader2, AlertCircle } from 'lucide-react'
 import { SOURCE_COLORS, SOURCE_META } from '@/lib/constants'
+import { trackEvent } from '@/components/hooks/use-track-event'
 
 interface Perspective {
   source: string
@@ -26,6 +27,11 @@ export function CompareModal({ clusterId, onClose }: CompareModalProps) {
   const [data, setData] = useState<CompareData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // 打开对比弹窗时上报
+  useEffect(() => {
+    trackEvent('view_compare', 'cluster', clusterId)
+  }, [clusterId])
 
   // 拉取对比数据
   useEffect(() => {

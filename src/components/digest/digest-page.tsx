@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { useReadingPosition } from "@/components/hooks/use-reading-position"
+import { trackEvent } from "@/components/hooks/use-track-event"
 import type { DigestItem } from "@/components/digest/digest-card"
 
 interface DigestData {
@@ -80,8 +81,10 @@ export function DigestPage() {
   }
 
   const sendToStudio = () => {
-    const ids = Array.from(selectedItems).join(',')
-    router.push(`/studio?items=${ids}`)
+    const ids = Array.from(selectedItems)
+    // 批量上报 send_to_studio 事件（每篇各一条）
+    ids.forEach(id => trackEvent('send_to_studio', 'digest_item', id, { count: ids.length }))
+    router.push(`/studio?items=${ids.join(',')}`)
   }
 
   // 全部条目（扁平化）

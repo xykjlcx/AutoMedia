@@ -10,6 +10,7 @@ import { ExportDialog } from './export-dialog'
 import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Download, Loader2, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DraftHistory } from './draft-history'
+import { trackEvent } from '@/components/hooks/use-track-event'
 import type { Platform } from './platform-selector'
 
 interface DraftState {
@@ -37,6 +38,11 @@ export function StudioPage() {
   const [showCardPreview, setShowCardPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // 页面访问埋点（仅首次 mount）
+  useEffect(() => {
+    trackEvent('visit_studio', 'page', '/studio')
+  }, [])
 
   // 从 URL 参数初始化（日报页跳转过来时带 items 参数）
   useEffect(() => {
@@ -115,6 +121,9 @@ export function StudioPage() {
     setGenerating(true)
     try {
       const draftId = await saveDraft()
+      if (draftId) {
+        trackEvent('generate_content', 'draft', draftId, { platform: draft.platform })
+      }
       const res = await fetch('/api/studio/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -233,14 +242,25 @@ export function StudioPage() {
                 <span>{copied ? '已复制' : '复制'}</span>
               </button>
               <button
-                onClick={async () => { const id = await saveDraft(); if (id) setShowCardPreview(true) }}
+                onClick={async () => {
+                  const id = await saveDraft()
+                  if (id) {
+                    trackEvent('generate_card', 'draft', id, { platform: draft.platform })
+                    setShowCardPreview(true)
+                  }
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
               >
                 <Image className="size-3.5" />
                 <span>分享卡片</span>
               </button>
               <button
-                onClick={async () => { const id = await saveDraft(); if (id) setShowExport(true) }}
+                onClick={async () => {
+                  const id = await saveDraft()
+                  if (id) {
+                    setShowExport(true)
+                  }
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
               >
                 <Download className="size-3.5" />

@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { GraphDrawer } from "./graph-drawer"
+import { trackEvent } from "@/components/hooks/use-track-event"
 
 // ==================== Types ====================
 
@@ -399,7 +400,13 @@ export function EntityGraph() {
 
   // 选中实体后拉取详情
   const selectEntity = useCallback(async (id: string) => {
-    setSelectedId(id)
+    setSelectedId(prev => {
+      // 仅在真正切换实体时上报（排除自动选中首项时的初始化）
+      if (prev !== null && prev !== id) {
+        trackEvent('view_entity', 'entity', id)
+      }
+      return id
+    })
     setDetailLoading(true)
     try {
       const res = await fetch(`/api/insights/entity/${id}`)
@@ -558,7 +565,7 @@ export function EntityGraph() {
         </div>
 
         <button
-          onClick={() => setGraphOpen(true)}
+          onClick={() => { setGraphOpen(true); trackEvent('open_graph_drawer', 'page', '/insights') }}
           disabled={!data || data.entities.length === 0}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-foreground border border-border/60 hover:bg-muted hover:border-[var(--color-warm-accent)]/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >

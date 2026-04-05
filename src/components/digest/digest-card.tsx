@@ -7,6 +7,7 @@ import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { FavoriteButton } from "@/components/favorites/favorite-button"
 import { RatingButtons } from "@/components/digest/rating-buttons"
 import { CompareModal } from "@/components/digest/compare-modal"
+import { trackEvent } from "@/components/hooks/use-track-event"
 
 export interface DigestItem {
   id: string
@@ -113,6 +114,7 @@ export function DigestCard({ item, index = 0, selectable, selected, onSelect }: 
             target="_blank"
             rel="noopener noreferrer"
             className="text-foreground hover:text-[var(--color-warm-accent)] transition-colors inline-flex items-start gap-1 group/link"
+            onClick={() => trackEvent('click_external', 'digest_item', item.id, { source: item.source, url: item.url })}
           >
             <span>{item.title}</span>
             <ExternalLink className="size-3.5 mt-0.5 shrink-0 opacity-0 group-hover/link:opacity-60 transition-opacity" />
@@ -160,7 +162,7 @@ export function DigestCard({ item, index = 0, selectable, selected, onSelect }: 
           onClick={async () => {
             const next = !expanded
             setExpanded(next)
-            // 展开时标记已读
+            // 展开时标记已读 + 上报事件
             if (next && !isRead) {
               setIsRead(true)
               await fetch("/api/digest/read", {
@@ -168,6 +170,7 @@ export function DigestCard({ item, index = 0, selectable, selected, onSelect }: 
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ids: [item.id] }),
               })
+              trackEvent('read', 'digest_item', item.id, { source: item.source })
             }
           }}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"

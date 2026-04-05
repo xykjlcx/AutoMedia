@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react"
 import { Star } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { trackEvent } from "@/components/hooks/use-track-event"
 
 interface FavoriteButtonProps {
   digestItemId: string
@@ -37,6 +38,7 @@ export function FavoriteButton({
         await fetch(`/api/favorites/${favoriteId}`, { method: "DELETE" })
         setFavoriteId(undefined)
         onToggle?.(false)
+        trackEvent('favorite_remove', 'digest_item', digestItemId)
       } else {
         // 添加收藏
         const res = await fetch("/api/favorites", {
@@ -47,6 +49,7 @@ export function FavoriteButton({
         const data = await res.json()
         setFavoriteId(data.id)
         onToggle?.(true, data.id)
+        trackEvent('favorite_add', 'digest_item', digestItemId)
       }
     } catch {
       // 回滚
