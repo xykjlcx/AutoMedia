@@ -12,20 +12,29 @@ if (!existsSync(CARDS_DIR)) {
   mkdirSync(CARDS_DIR, { recursive: true })
 }
 
-// 加载字体（优先 public/fonts/，其次系统字体）
+// 字体候选清单（优先级从高到低），satori 不支持 variable font/TTC，必须是静态单权重 TTF/OTF
+const FONT_CANDIDATES = [
+  'SourceHanSansSC-Regular.otf', // Adobe Source Han Sans SC (静态 OTF，推荐)
+  'NotoSansSC-Regular.otf',       // Google Noto Sans SC 静态 OTF
+  'NotoSansSC-Regular.ttf',       // 兜底（如果是静态 TTF）
+]
+
+function getFontPath(): string {
+  for (const name of FONT_CANDIDATES) {
+    const fontPath = join(process.cwd(), 'public', 'fonts', name)
+    if (existsSync(fontPath)) return fontPath
+  }
+  throw new Error(
+    '未找到可用的静态中文字体。请将以下任一字体放到 public/fonts/：\n' +
+    '- SourceHanSansSC-Regular.otf（推荐，可从 Adobe Source Han Sans 下载）\n' +
+    '- NotoSansSC-Regular.otf（静态版）\n' +
+    '注意：satori 不支持 variable font 和 TTC 格式'
+  )
+}
+
+// 加载字体二进制数据给 satori 使用
 function loadFont(): ArrayBuffer {
-  const fontPath = join(process.cwd(), 'public', 'fonts', 'NotoSansSC-Regular.ttf')
-  if (existsSync(fontPath)) {
-    return readFileSync(fontPath).buffer as ArrayBuffer
-  }
-  const systemFonts = [
-    '/System/Library/Fonts/PingFang.ttc',
-    '/System/Library/Fonts/STHeiti Light.ttc',
-  ]
-  for (const f of systemFonts) {
-    if (existsSync(f)) return readFileSync(f).buffer as ArrayBuffer
-  }
-  throw new Error('未找到可用的中文字体，请将 NotoSansSC-Regular.ttf 放到 public/fonts/')
+  return readFileSync(getFontPath()).buffer as ArrayBuffer
 }
 
 export interface CardInput {
@@ -57,7 +66,7 @@ export const satoriRenderer: CardRenderer = {
           height: '100%',
           background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
           padding: '48px',
-          fontFamily: 'Noto Sans SC',
+          fontFamily: 'Chinese Sans',
           color: '#fff',
         },
         children: [
@@ -106,14 +115,20 @@ export const satoriRenderer: CardRenderer = {
       width: 800,
       height: 450,
       fonts: [{
-        name: 'Noto Sans SC',
+        name: 'Chinese Sans',
         data: font,
         weight: 400,
         style: 'normal',
       }],
     })
 
-    const resvg = new Resvg(svg)
+    // 显式指定字体，禁用系统字体扫描，避免 resvg 误加载 macOS 的 TTC 文件报错
+    const resvg = new Resvg(svg, {
+      font: {
+        loadSystemFonts: false,
+        fontFiles: [getFontPath()],
+      },
+    })
     const pngBuffer = resvg.render().asPng()
 
     const filename = `${uuid()}.png`
