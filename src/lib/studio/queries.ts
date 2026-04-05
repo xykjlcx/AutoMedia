@@ -101,18 +101,23 @@ export function deleteDraft(id: string) {
   db.delete(drafts).where(eq(drafts.id, id)).run()
 }
 
+// 内部辅助：去重并保留顺序
+function dedupePreserveOrder(itemIds: string[]): string[] {
+  const seen = new Set<string>()
+  const ordered: string[] = []
+  for (const id of itemIds) {
+    if (!id || seen.has(id)) continue
+    seen.add(id)
+    ordered.push(id)
+  }
+  return ordered
+}
+
 // 全量同步草稿素材：以 itemIds 为准，事务内先清后插
 // 用于草稿已保存后用户仍在调整素材选择的场景
 export function syncDraftSources(draftId: string, itemIds: string[]) {
   const now = new Date().toISOString()
-  // 去重并保留顺序
-  const seen = new Set<string>()
-  const orderedIds: string[] = []
-  for (const id of itemIds) {
-    if (!id || seen.has(id)) continue
-    seen.add(id)
-    orderedIds.push(id)
-  }
+  const orderedIds = dedupePreserveOrder(itemIds)
 
   db.$client.transaction(() => {
     db.delete(draftSources).where(eq(draftSources.draftId, draftId)).run()
@@ -124,6 +129,39 @@ export function syncDraftSources(draftId: string, itemIds: string[]) {
         sortOrder: i,
         createdAt: now,
       }).run()
+    }
+  })()
+}
+
+// 合并更新：在单个事务内同时完成字段 update 与素材同步
+// 避免 PATCH 路由把两次写操作拆成两个事务导致部分成功状态
+// sourceItemIds 为 undefined 时跳过素材同步；传空数组表示清空素材
+export function updateDraftWithSources(
+  id: string,
+  input: UpdateDraftInput,
+  sourceItemIds?: string[]
+) {
+  const now = new Date().toISOString()
+  const shouldSyncSources = Array.isArray(sourceItemIds)
+  const orderedIds = shouldSyncSources ? dedupePreserveOrder(sourceItemIds!) : []
+
+  db.$client.transaction(() => {
+    db.update(drafts).set({
+      ...input,
+      updatedAt: now,
+    }).where(eq(drafts.id, id)).run()
+
+    if (shouldSyncSources) {
+      db.delete(draftSources).where(eq(draftSources.draftId, id)).run()
+      for (let i = 0; i < orderedIds.length; i++) {
+        db.insert(draftSources).values({
+          id: uuid(),
+          draftId: id,
+          digestItemId: orderedIds[i],
+          sortOrder: i,
+          createdAt: now,
+        }).run()
+      }
     }
   })()
 }

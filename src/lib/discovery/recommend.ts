@@ -51,17 +51,36 @@ function getAvailableSources(): CatalogEntry[] {
     existingSources.map(s => s.rssPath).filter(Boolean)
   )
 
-  // 也排除已推荐过的（不管状态）
+  // 排除策略（仅针对 source_suggestions 表内的记录）：
+  //   1) status = 'added' → 用户已采纳，不再重复推荐
+  //   2) status = 'dismissed' 且在最近 30 天内 → 用户刚拒绝过，冷却一段时间
+  //   3) status = 'pending' → 当前仍在列表中，避免重复
+  // 超过 30 天的 dismissed 允许重新被推荐（兴趣会变化，给一次机会）。
   const allSuggested = getAllSuggestions()
-  const suggestedUrls = new Set(allSuggested.map(s => s.rssUrl))
+  const now = Date.now()
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+  const excludedUrls = new Set<string>()
+  for (const s of allSuggested) {
+    if (s.status === 'added' || s.status === 'pending') {
+      excludedUrls.add(s.rssUrl)
+      continue
+    }
+    if (s.status === 'dismissed') {
+      const createdAtMs = Date.parse(s.createdAt)
+      // createdAt 解析失败时保守排除，避免反复推荐坏数据
+      if (Number.isNaN(createdAtMs) || now - createdAtMs < THIRTY_DAYS_MS) {
+        excludedUrls.add(s.rssUrl)
+      }
+    }
+  }
 
   return RSS_CATALOG.filter(entry => {
     // RSSHub 路径格式
     if (entry.rssUrl.startsWith('/')) {
-      return !existingPaths.has(entry.rssUrl) && !suggestedUrls.has(entry.rssUrl)
+      return !existingPaths.has(entry.rssUrl) && !excludedUrls.has(entry.rssUrl)
     }
     // 完整 URL
-    return !existingUrls.has(entry.rssUrl) && !suggestedUrls.has(entry.rssUrl)
+    return !existingUrls.has(entry.rssUrl) && !excludedUrls.has(entry.rssUrl)
   })
 }
 
@@ -184,11 +203,17 @@ export async function generateRecommendations(): Promise<Suggestion[]> {
 }
 
 // 原子性替换：先算出新推荐，成功后再在事务里把旧 pending 标 dismissed 并插入新的
-// AI 调用失败时旧推荐保持不变，避免用户看到空列表
+// AI 调用失败或返回空结果时旧推荐保持不变，避免把 pending 列表永久清空
 export async function refreshRecommendations(): Promise<Suggestion[]> {
   const fresh = await computeRecommendations()
 
-  // 即使生成为空也要进入替换流程，让旧 pending 被清理，与旧行为保持一致
+  // 空结果视为失败的 refresh：不动现有 pending 数据，让上层捕获并提示用户重试。
+  // 之前的实现会把旧 pending 全部标为 dismissed，结合 getAvailableSources 的过滤规则
+  // 会造成"一次 AI 空响应 → 所有已推荐源被永久拉黑"的事故。
+  if (fresh.length === 0) {
+    throw new Error('AI 返回空推荐结果，请稍后重试')
+  }
+
   db.$client.transaction(() => {
     db.update(sourceSuggestions)
       .set({ status: 'dismissed' })

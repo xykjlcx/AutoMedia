@@ -2,7 +2,11 @@ services:
   automedia:
     build: .
     ports:
-      - "3000:3000"
+      # 安全说明：AutoMedia 是单用户本地工具，所有 API 路由均无身份校验（包括 /api/studio/drafts 的 CRUD）。
+      # 因此容器端口必须只绑定到宿主机 loopback（127.0.0.1），避免同局域网的其他机器直接访问数据库。
+      # 如需远程访问，请在前面加一层带认证的反向代理（Caddy/Nginx + Basic Auth 或 Tailscale），
+      # 不要改成 "3000:3000" 或 "0.0.0.0:3000:3000"。
+      - "127.0.0.1:3000:3000"
     volumes:
       - automedia-data:/app/data
     environment:

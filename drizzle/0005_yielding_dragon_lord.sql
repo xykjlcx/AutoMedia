@@ -1,1 +1,1 @@
-CREATE UNIQUE INDEX `idx_article_relations_item_entity` ON `article_relations` (`digest_item_id`,`entity_id`);
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_article_relations_item_entity` ON `article_relations` (`digest_item_id`,`entity_id`);

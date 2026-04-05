@@ -1,12 +1,21 @@
 // ============================================================================
 // 设计说明：单用户本地工具（Single-User Design）
-// 本路由不做身份校验与所有权检查，因为 AutoMedia 当前设计为个人本地运行。
-// 多用户部署时需要：1) 注入当前用户身份；2) 每个读写操作前校验草稿归属；
-// 3) queries 层追加 ownerId 参数。详见 src/lib/studio/queries.ts 顶部。
+// 本路由刻意不做身份校验与所有权检查，因为 AutoMedia 设计为个人本地运行。
+//
+// ⚠️ 部署安全要求：正因为没有认证层，部署时必须保证服务只对 loopback（127.0.0.1）可达。
+//   - Docker：docker-compose.yml 已将端口映射为 "127.0.0.1:3000:3000"，切勿改回 "3000:3000"
+//   - 裸机：Next.js 启动时绑定 localhost，或放在带认证的反向代理（Caddy/Nginx/Tailscale）后面
+//   - 不要把本服务暴露到公网或共享局域网，否则任何人都能读写/删除草稿
+//
+// 多用户部署时需要的最小改动：
+//   1) 注入当前用户身份（中间件或 session）
+//   2) 每个读写操作前校验草稿归属（getDraft → ownerId 比对）
+//   3) queries 层追加 ownerId 参数，所有 WHERE 带上该条件
+// 详见 src/lib/studio/queries.ts 顶部。
 // ============================================================================
 
 import { NextResponse } from 'next/server'
-import { getDraft, updateDraft, deleteDraft, syncDraftSources } from '@/lib/studio/queries'
+import { getDraft, updateDraftWithSources, deleteDraft } from '@/lib/studio/queries'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -18,12 +27,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const body = await req.json()
-  // 素材列表走独立的 sync 流程；其余字段（title / content / platform / status / aiPrompt）走 updateDraft
+  // 字段更新与素材同步必须在同一事务内完成，避免前者成功后者失败导致不一致状态
   const { sourceItemIds, ...rest } = body ?? {}
-  updateDraft(id, rest)
-  if (Array.isArray(sourceItemIds)) {
-    syncDraftSources(id, sourceItemIds)
-  }
+  updateDraftWithSources(id, rest, Array.isArray(sourceItemIds) ? sourceItemIds : undefined)
   return NextResponse.json({ ok: true })
 }
 
