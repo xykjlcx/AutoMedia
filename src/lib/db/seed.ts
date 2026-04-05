@@ -8,7 +8,7 @@ const DEFAULT_SOURCES = [
   { id: 'zhihu', name: '知乎热榜', icon: '🔍', type: 'public' as const, rssPath: '/zhihu/hot', sortOrder: 2 },
   { id: 'sspai', name: '少数派', icon: '📱', type: 'public' as const, rssPath: '/sspai/index', sortOrder: 3 },
   { id: 'hackernews', name: 'Hacker News', icon: '📰', type: 'public' as const, rssPath: '/hackernews/best', sortOrder: 4 },
-  { id: 'twitter', name: 'Twitter', icon: '🐦', type: 'private' as const, targetUrl: 'https://x.com/home', enabled: false, sortOrder: 5 },
+  { id: 'twitter', name: 'Twitter 时间线', icon: '🐦', type: 'twitter-private' as const, targetUrl: 'https://x.com/home', enabled: false, sortOrder: 5 },
   { id: 'xiaohongshu', name: '小红书', icon: '📕', type: 'private' as const, targetUrl: 'https://www.xiaohongshu.com/explore', enabled: false, sortOrder: 6 },
   { id: 'wechat', name: '公众号', icon: '📖', type: 'private' as const, targetUrl: 'https://mp.weixin.qq.com', enabled: false, sortOrder: 7 },
 ]
@@ -58,6 +58,10 @@ export function migrateRssSources() {
     // 禁用不可用的源
     db.update(sourceConfigs).set({ enabled: false }).where(eq(sourceConfigs.id, 'juejin')).run()
     db.update(sourceConfigs).set({ enabled: false }).where(eq(sourceConfigs.id, 'producthunt')).run()
+    // Twitter legacy 'private' 类型升级到 'twitter-private'（幂等）
+    db.update(sourceConfigs).set({ type: 'twitter-private' })
+      .where(eq(sourceConfigs.id, 'twitter'))
+      .run()
   } catch {
     // 静默失败
   }
