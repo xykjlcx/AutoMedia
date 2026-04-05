@@ -11,6 +11,7 @@ import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Down
 import { cn } from '@/lib/utils'
 import { DraftHistory } from './draft-history'
 import { DraftVersions } from './draft-versions'
+import { MarkdownPreview } from './markdown-preview'
 import { trackEvent } from '@/components/hooks/use-track-event'
 import type { Platform } from './platform-selector'
 
@@ -313,14 +314,7 @@ export function StudioPage() {
               <span className="text-sm font-medium">预览</span>
             </div>
             <div className="p-6">
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                {draft.title && <h1 className="text-xl font-bold font-serif-display mb-4">{draft.title}</h1>}
-                {draft.content ? (
-                  <div dangerouslySetInnerHTML={{ __html: simpleMarkdownRender(draft.content) }} />
-                ) : (
-                  <p className="text-muted-foreground/50 italic">暂无内容</p>
-                )}
-              </div>
+              <MarkdownPreview content={draft.content} title={draft.title} />
             </div>
           </div>
         )}
@@ -335,16 +329,4 @@ export function StudioPage() {
       )}
     </div>
   )
-}
-
-// 简易 Markdown 渲染（预览面板用）
-function simpleMarkdownRender(md: string): string {
-  if (!md) return ''
-  return md
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^---$/gm, '<hr>')
-    .replace(/\n\n/g, '<br><br>')
 }
