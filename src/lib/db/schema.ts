@@ -168,6 +168,18 @@ export const userEvents = sqliteTable('user_events', {
   createdAt: text('created_at').notNull(),
 })
 
+// RSS 源推荐
+export const sourceSuggestions = sqliteTable('source_suggestions', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(), // 推荐源名称
+  description: text('description').notNull(), // 推荐源描述
+  rssUrl: text('rss_url').notNull(), // RSS 订阅地址
+  category: text('category').notNull(), // 'ai' | 'ecommerce' | 'tech' | 'startup' | 'general'
+  reason: text('reason').notNull(), // AI 推荐理由
+  status: text('status').notNull().default('pending'), // 'pending' | 'added' | 'dismissed'
+  createdAt: text('created_at').notNull(),
+})
+
 // 阅读位置记忆
 export const readingPosition = sqliteTable('reading_position', {
   id: text('id').primaryKey(),
