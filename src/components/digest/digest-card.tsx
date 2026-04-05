@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ExternalLink, ChevronDown, Users } from "lucide-react"
+import { ExternalLink, ChevronDown, Users, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { FavoriteButton } from "@/components/favorites/favorite-button"
@@ -30,9 +30,12 @@ export interface DigestItem {
 interface DigestCardProps {
   item: DigestItem
   index?: number
+  selectable?: boolean
+  selected?: boolean
+  onSelect?: (id: string) => void
 }
 
-export function DigestCard({ item, index = 0 }: DigestCardProps) {
+export function DigestCard({ item, index = 0, selectable, selected, onSelect }: DigestCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [isRead, setIsRead] = useState(item.isRead ?? false)
   const sourceColor = SOURCE_COLORS[item.source] || "#9C9590"
@@ -55,6 +58,19 @@ export function DigestCard({ item, index = 0 }: DigestCardProps) {
         animationDelay: `${index * 60}ms`,
       }}
     >
+      {selectable && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onSelect?.(item.id) }}
+          className="absolute top-3 right-3 z-10"
+        >
+          <div className={cn(
+            'size-5 rounded border-2 flex items-center justify-center transition-colors',
+            selected ? 'bg-[var(--color-warm-accent)] border-[var(--color-warm-accent)]' : 'border-border hover:border-[var(--color-warm-accent)]/50'
+          )}>
+            {selected && <Check className="size-3.5 text-white" />}
+          </div>
+        </button>
+      )}
       <div className="p-4">
         {/* 头部：来源 + 收藏 */}
         <div className="flex items-center justify-between mb-2">

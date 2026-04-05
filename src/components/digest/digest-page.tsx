@@ -32,6 +32,9 @@ export function DigestPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("recommended")
   // 信息源筛选：null = 全部，string = 指定来源
   const [selectedSource, setSelectedSource] = useState<string | null>(null)
+  // 多选模式
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
 
   const fetchDigest = useCallback(async (date: string) => {
     setLoading(true)
@@ -61,6 +64,20 @@ export function DigestPage() {
 
   const handleGenerateComplete = () => {
     fetchDigest(currentDate)
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedItems(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const sendToStudio = () => {
+    const ids = Array.from(selectedItems).join(',')
+    router.push(`/studio?items=${ids}`)
   }
 
   // 全部条目（扁平化）
@@ -121,7 +138,8 @@ export function DigestPage() {
         <div className="mt-6">
           {/* Tab 切换（滚动时固定） */}
           <div className="sticky top-14 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur-sm">
-          <div className="flex items-center gap-1 mb-0 p-1 rounded-lg bg-muted/50 w-fit">
+          <div className="flex items-center gap-2 mb-0">
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 w-fit">
             <button
               onClick={() => setActiveTab("recommended")}
               className={cn(
@@ -148,6 +166,16 @@ export function DigestPage() {
               全部资讯
               <span className="text-xs opacity-60">{totalAll}</span>
             </button>
+          </div>
+          <button
+            onClick={() => { setSelectMode(!selectMode); setSelectedItems(new Set()) }}
+            className={cn(
+              'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+              selectMode ? 'bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)]' : 'text-muted-foreground hover:bg-muted'
+            )}
+          >
+            {selectMode ? '取消选择' : '选择文章'}
+          </button>
           </div>
           {/* 小屏来源筛选（侧边栏替代） */}
           {availableSources.length > 0 && (
@@ -249,7 +277,14 @@ export function DigestPage() {
               {/* 双列卡片网格 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 {sortedItems.map((item, i) => (
-                  <DigestCard key={item.id} item={item} index={i} />
+                  <DigestCard
+                    key={item.id}
+                    item={item}
+                    index={i}
+                    selectable={selectMode}
+                    selected={selectedItems.has(item.id)}
+                    onSelect={toggleSelect}
+                  />
                 ))}
               </div>
 
@@ -274,6 +309,18 @@ export function DigestPage() {
           <p className="text-sm text-muted-foreground max-w-xs">
             点击上方按钮生成今日资讯日报，AI 会从多个信息源为你精选值得关注的内容
           </p>
+        </div>
+      )}
+
+      {selectMode && selectedItems.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-card border border-border shadow-lg">
+          <span className="text-sm text-muted-foreground">已选 {selectedItems.size} 篇</span>
+          <button
+            onClick={sendToStudio}
+            className="px-4 py-1.5 rounded-lg bg-[var(--color-warm-accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            发送到 Studio
+          </button>
         </div>
       )}
     </div>
