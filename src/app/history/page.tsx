@@ -7,8 +7,12 @@ import { zhCN } from "date-fns/locale"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Separator } from "@/components/ui/separator"
+import { useReadingPosition } from "@/components/hooks/use-reading-position"
 
 export default function HistoryPage() {
+  // 阅读位置记忆
+  useReadingPosition("/history", "")
+
   const router = useRouter()
   const [availableDates, setAvailableDates] = useState<string[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)

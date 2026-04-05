@@ -6,6 +6,7 @@ import { format, parseISO } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { Separator } from "@/components/ui/separator"
 import { DigestCard, type DigestItem } from "@/components/digest/digest-card"
+import { useReadingPosition } from "@/components/hooks/use-reading-position"
 
 interface FavoriteItem {
   favorite: {
@@ -32,6 +33,9 @@ interface FavoriteItem {
 }
 
 export default function FavoritesPage() {
+  // 阅读位置记忆
+  useReadingPosition("/favorites", "")
+
   const [favorites, setFavorites] = useState<FavoriteItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")

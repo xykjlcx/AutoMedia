@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Search } from "lucide-react"
 import { DigestCard } from "@/components/digest/digest-card"
 import type { DigestItem } from "@/components/digest/digest-card"
+import { useReadingPosition } from "@/components/hooks/use-reading-position"
 
 // 从 API 返回的原始字段（snake_case 或 camelCase，取决于是否经过 Drizzle）
 interface RawDigestItem {
@@ -52,6 +53,9 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 阅读位置记忆：不同搜索词对应不同滚动位置
+  useReadingPosition("/search", query)
 
   // 自动聚焦
   useEffect(() => {

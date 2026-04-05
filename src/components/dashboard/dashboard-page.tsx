@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
+import { useReadingPosition } from "@/components/hooks/use-reading-position"
 
 interface StatsData {
   period: { start: string; end: string }
@@ -33,6 +34,9 @@ export function DashboardPage() {
   const [period, setPeriod] = useState<Period>("week")
   const [data, setData] = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // 阅读位置记忆：week/month 各自独立
+  useReadingPosition("/dashboard", period)
 
   useEffect(() => {
     setLoading(true)

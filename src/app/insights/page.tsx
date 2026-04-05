@@ -6,8 +6,12 @@ import { Separator } from "@/components/ui/separator"
 import { EntityGraph } from "@/components/insights/entity-graph"
 import { CrossSourceAlerts } from "@/components/insights/cross-source-alerts"
 import { CompareViews } from "@/components/insights/compare-views"
+import { useReadingPosition } from "@/components/hooks/use-reading-position"
 
 export default function InsightsPage() {
+  // 阅读位置记忆
+  useReadingPosition("/insights", "")
+
   const [extracting, setExtracting] = useState(false)
   const [extractResult, setExtractResult] = useState<string | null>(null)
 
