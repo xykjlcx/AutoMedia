@@ -73,8 +73,8 @@ const recommendationSchema = z.object({
   })).describe('按推荐优先级排序的源列表，最多 8 条'),
 })
 
-// 生成 AI 推荐
-export async function generateRecommendations(): Promise<Suggestion[]> {
+// 仅计算推荐（不写库），供原子性替换使用
+async function computeRecommendations(): Promise<Suggestion[]> {
   const available = getAvailableSources()
   if (available.length === 0) return []
 
@@ -146,7 +146,7 @@ ${catalogText}
     recommendations = picks
   }
 
-  // 保存到数据库
+  // 组装推荐对象（不落库）
   const now = new Date().toISOString()
   const suggestions: Suggestion[] = []
 
@@ -154,7 +154,7 @@ ${catalogText}
     if (rec.index < 0 || rec.index >= available.length) continue
     const entry = available[rec.index]
     const id = `suggestion-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    const suggestion: Suggestion = {
+    suggestions.push({
       id,
       name: entry.name,
       description: entry.description,
@@ -163,12 +163,44 @@ ${catalogText}
       reason: rec.reason,
       status: 'pending',
       createdAt: now,
-    }
-    db.insert(sourceSuggestions).values(suggestion).run()
-    suggestions.push(suggestion)
+    })
   }
 
   return suggestions
+}
+
+// 生成 AI 推荐并写库（供首次加载使用：库里没 pending 时调用）
+export async function generateRecommendations(): Promise<Suggestion[]> {
+  const suggestions = await computeRecommendations()
+  if (suggestions.length === 0) return []
+
+  db.$client.transaction(() => {
+    for (const suggestion of suggestions) {
+      db.insert(sourceSuggestions).values(suggestion).run()
+    }
+  })()
+
+  return suggestions
+}
+
+// 原子性替换：先算出新推荐，成功后再在事务里把旧 pending 标 dismissed 并插入新的
+// AI 调用失败时旧推荐保持不变，避免用户看到空列表
+export async function refreshRecommendations(): Promise<Suggestion[]> {
+  const fresh = await computeRecommendations()
+
+  // 即使生成为空也要进入替换流程，让旧 pending 被清理，与旧行为保持一致
+  db.$client.transaction(() => {
+    db.update(sourceSuggestions)
+      .set({ status: 'dismissed' })
+      .where(eq(sourceSuggestions.status, 'pending'))
+      .run()
+
+    for (const suggestion of fresh) {
+      db.insert(sourceSuggestions).values(suggestion).run()
+    }
+  })()
+
+  return fresh
 }
 
 // 将推荐源添加到用户源列表
@@ -226,11 +258,3 @@ export function dismissSuggestion(suggestionId: string): { success: boolean; err
   return { success: true }
 }
 
-// 清除所有 pending 推荐（刷新前调用）
-export function clearPendingSuggestions(): void {
-  // 把 pending 状态的标记为 dismissed，避免重复推荐
-  db.update(sourceSuggestions)
-    .set({ status: 'dismissed' })
-    .where(eq(sourceSuggestions.status, 'pending'))
-    .run()
-}

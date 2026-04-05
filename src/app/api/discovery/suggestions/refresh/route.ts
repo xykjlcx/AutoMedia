@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
-import { clearPendingSuggestions, generateRecommendations } from '@/lib/discovery/recommend'
+import { refreshRecommendations } from '@/lib/discovery/recommend'
 
 // 强制重新生成推荐
+// 先执行 AI 生成，成功后再在事务里替换旧 pending；失败时旧推荐保持不变
 export async function POST() {
   try {
-    // 清除现有 pending 推荐
-    clearPendingSuggestions()
-
-    // 重新生成
-    const suggestions = await generateRecommendations()
+    const suggestions = await refreshRecommendations()
     return NextResponse.json({ suggestions })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

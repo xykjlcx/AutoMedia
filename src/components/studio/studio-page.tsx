@@ -48,10 +48,16 @@ export function StudioPage() {
   // 创建/更新草稿
   const saveDraft = async (): Promise<string | null> => {
     if (draft.id) {
+      // 同时同步 sourceItemIds，否则用户保存后调整素材的操作不会持久化
       await fetch(`/api/studio/drafts/${draft.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: draft.title, content: draft.content, platform: draft.platform }),
+        body: JSON.stringify({
+          title: draft.title,
+          content: draft.content,
+          platform: draft.platform,
+          sourceItemIds: draft.sourceIds,
+        }),
       })
       return draft.id
     } else {

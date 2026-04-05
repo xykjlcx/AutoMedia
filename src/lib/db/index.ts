@@ -108,6 +108,8 @@ sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_topic_entities_name ON topic_entitie
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_topic_entities_type ON topic_entities(type)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_article_relations_item ON article_relations(digest_item_id)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_article_relations_entity ON article_relations(entity_id)`)
+// 每篇文章与每个实体的关系唯一，避免 mention_count 被重复累加
+sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_article_relations_item_entity ON article_relations(digest_item_id, entity_id)`)
 
 // 内容创作相关索引
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_drafts_status ON drafts(status)`)
@@ -117,6 +119,21 @@ sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_share_cards_draft ON share_cards(dra
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_events_type ON user_events(event_type)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_events_target ON user_events(target_type, target_id)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_events_created ON user_events(created_at)`)
+
+// RSS 源推荐（与 schema.ts 中的 sourceSuggestions 保持一致）
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS source_suggestions (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    rss_url TEXT NOT NULL,
+    category TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL
+  )
+`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_source_suggestions_status ON source_suggestions(status)`)
 
 // 阅读位置记忆
 sqlite.exec(`

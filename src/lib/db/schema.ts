@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // 原始采集数据
 export const rawItems = sqliteTable('raw_items', {
@@ -156,7 +156,10 @@ export const articleRelations = sqliteTable('article_relations', {
   entityId: text('entity_id').notNull().references(() => topicEntities.id),
   relationType: text('relation_type').notNull(), // 'mentions' | 'about' | 'related'
   createdAt: text('created_at').notNull(),
-})
+}, (table) => ({
+  // 每篇文章与每个实体的关系最多一条，防止 mention_count 重复膨胀
+  itemEntityUnique: uniqueIndex('idx_article_relations_item_entity').on(table.digestItemId, table.entityId),
+}))
 
 // 用户行为事件
 export const userEvents = sqliteTable('user_events', {
