@@ -8,6 +8,7 @@ import { scoreItems } from './scoring'
 import { clusterItems } from './clustering'
 import { summarizeItems } from './summarize'
 import { analyzeTrends } from './trends'
+import { extractEntities } from './entity-extract'
 import type { CollectedItem } from './collectors/types'
 import { sendDigestNotification } from '@/lib/notify'
 import { shouldUpdateProfile, updatePreferenceProfile } from './preference'
@@ -39,6 +40,7 @@ export interface PipelineProgress {
     clustering?: number
     summarizing?: number
     trends?: number
+    entityExtract?: number
     total?: number
   }
   detail?: string
@@ -303,6 +305,34 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
       writeNewDigest()
     }
+
+    // ── Stage 3.6: 实体提取（知识图谱） ──
+    const entityStartTime = Date.now()
+    progress.detail = '实体提取中...'
+    await saveProgress(runId, progress, date)
+
+    try {
+      // 查询刚写入的 digest_items（需要真实 ID 建立关联）
+      const newDigestItems = db.$client.prepare(`
+        SELECT id, title, one_liner as oneLiner, summary, source
+        FROM digest_items WHERE digest_date = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+      `).all(date, summarized.length) as Array<{
+        id: string; title: string; oneLiner: string; summary: string; source: string
+      }>
+
+      if (newDigestItems.length > 0) {
+        const entityResult = await extractEntities(newDigestItems, date)
+        progress.detail = `实体提取完成（${entityResult.entityCount} 个实体，${entityResult.relationCount} 条关联）`
+      }
+    } catch (err) {
+      console.error('[pipeline] 实体提取失败:', err)
+      progress.detail = '实体提取失败，不影响日报生成'
+    }
+
+    progress.timing!.entityExtract = Math.round((Date.now() - entityStartTime) / 1000)
+    await saveProgress(runId, progress, date)
 
     // 统计当天总数
     const totalDigest = (db.$client

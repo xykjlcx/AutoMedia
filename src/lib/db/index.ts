@@ -81,6 +81,34 @@ sqlite.exec(`
   )
 `)
 
+// 知识图谱相关表
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS topic_entities (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    first_seen_date TEXT NOT NULL,
+    mention_count INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL
+  )
+`)
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS article_relations (
+    id TEXT PRIMARY KEY,
+    digest_item_id TEXT NOT NULL REFERENCES digest_items(id),
+    entity_id TEXT NOT NULL REFERENCES topic_entities(id),
+    relation_type TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`)
+
+// 知识图谱相关索引
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_topic_entities_name ON topic_entities(name)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_topic_entities_type ON topic_entities(type)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_article_relations_item ON article_relations(digest_item_id)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_article_relations_entity ON article_relations(entity_id)`)
+
 // 内容创作相关索引
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_drafts_status ON drafts(status)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_drafts_platform ON drafts(platform)`)

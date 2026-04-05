@@ -139,6 +139,25 @@ export const shareCards = sqliteTable('share_cards', {
   createdAt: text('created_at').notNull(),
 })
 
+// 话题实体（知识图谱）
+export const topicEntities = sqliteTable('topic_entities', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // 'person' | 'company' | 'product' | 'technology'
+  firstSeenDate: text('first_seen_date').notNull(),
+  mentionCount: integer('mention_count').notNull().default(1),
+  updatedAt: text('updated_at').notNull(),
+})
+
+// 文章-实体关联
+export const articleRelations = sqliteTable('article_relations', {
+  id: text('id').primaryKey(),
+  digestItemId: text('digest_item_id').notNull().references(() => digestItems.id),
+  entityId: text('entity_id').notNull().references(() => topicEntities.id),
+  relationType: text('relation_type').notNull(), // 'mentions' | 'about' | 'related'
+  createdAt: text('created_at').notNull(),
+})
+
 // 用户行为事件
 export const userEvents = sqliteTable('user_events', {
   id: text('id').primaryKey(),
