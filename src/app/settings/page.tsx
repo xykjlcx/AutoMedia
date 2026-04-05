@@ -1,9 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle, Compass, RefreshCw, Eye, EyeOff } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
+import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle, Compass, RefreshCw, Eye, EyeOff, LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+// ── 设置页菜单类型 ──
+type SettingsSectionKey = 'model' | 'sources' | 'schedule'
+
+interface MenuItem {
+  key: SettingsSectionKey
+  label: string
+  icon: LucideIcon
+}
+
+const MENU_ITEMS: MenuItem[] = [
+  { key: 'model', label: '模型设置', icon: Cpu },
+  { key: 'sources', label: '信息源', icon: Rss },
+  { key: 'schedule', label: '定时任务', icon: Clock },
+]
 
 // ── 模型测试对话框 ──
 interface TestResult {
@@ -848,9 +862,11 @@ export default function SettingsPage() {
     }
   }
 
+  const [activeSection, setActiveSection] = useState<SettingsSectionKey>('model')
+
   if (loading || scheduleLoading) {
     return (
-      <div className="mx-auto max-w-[720px] px-4 pb-16">
+      <div className="mx-auto max-w-[1200px] px-4 pb-16 pt-8">
         <div className="py-6 text-center">
           <div className="animate-gentle-pulse text-sm text-muted-foreground">加载中...</div>
         </div>
@@ -859,342 +875,366 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[720px] px-4 pb-16">
-      {/* 页面标题 */}
-      <div className="py-6 text-center">
-        <h1 className="font-serif-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          模型设置
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          配置 AI 模型的接入方式和参数
-        </p>
-      </div>
-
-      <Separator className="mb-8" />
-
-      <div className="space-y-8">
-        {/* 信息源管理 */}
-        <SourcesSection />
-
-        <Separator />
-
-        {/* 请求地址 */}
-        <section>
-          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
-            <Server className="size-4" />
-            请求地址
-          </h2>
-          <input
-            type="url"
-            value={settings.baseUrl}
-            onChange={e => { setSettings(prev => ({ ...prev, baseUrl: e.target.value })); setSaved(false) }}
-            placeholder={settings.provider === 'anthropic' ? "https://api.anthropic.com" : "https://api.openai.com/v1"}
-            className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-          />
-          <p className="text-xs text-muted-foreground mt-1.5">
-            填写 API 服务地址。Anthropic 协议会在末尾自动拼接 /messages，OpenAI 协议会拼接 /chat/completions。
-            例：MiniMax Anthropic 填 https://api.minimaxi.com/anthropic/v1，OpenAI 填 https://api.minimaxi.com/v1
-          </p>
-        </section>
-
-        {/* API Key */}
-        <section>
-          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
-            <Key className="size-4" />
-            API Key
-          </h2>
-          {settings.hasEnvKey && (
-            <p className="text-xs text-muted-foreground mb-2">
-              已检测到环境变量中的 API Key，下方留空将使用环境变量
-            </p>
-          )}
-          <input
-            type="password"
-            value={settings.apiKey}
-            onChange={e => { setSettings(prev => ({ ...prev, apiKey: e.target.value })); setSaved(false) }}
-            placeholder="sk-..."
-            className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-          />
-        </section>
-
-        {/* API 协议 */}
-        <section>
-          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
-            <Server className="size-4" />
-            API 协议
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {API_PROTOCOLS.map(protocol => (
-              <button
-                key={protocol.id}
-                onClick={() => handleProtocolChange(protocol.id)}
-                className={cn(
-                  "flex flex-col items-start gap-1 p-3 rounded-lg border transition-all text-left",
-                  settings.provider === protocol.id
-                    ? "border-[var(--color-warm-accent)] bg-[var(--color-warm-accent)]/5"
-                    : "border-border/60 hover:border-border hover:bg-muted/50"
-                )}
-              >
-                <span className="font-medium text-sm text-foreground">{protocol.name}</span>
-                <span className="text-xs text-muted-foreground">{protocol.description}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* 模型名称 */}
-        <section>
-          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-4">
-            <Cpu className="size-4" />
-            模型名称
-          </h2>
-
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg border border-border/60 bg-card">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="size-4 text-amber-500" />
-                <span className="text-sm font-medium text-foreground">快速模型</span>
-                <span className="text-xs text-muted-foreground">— 评分筛选、去重聚类</span>
-              </div>
-              <input
-                type="text"
-                value={settings.fastModel}
-                onChange={e => { setSettings(prev => ({ ...prev, fastModel: e.target.value })); setSaved(false) }}
-                placeholder="例：gpt-4o-mini / claude-haiku-4-5-20251001 / deepseek-chat"
-                className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-              />
-            </div>
-
-            <div className="p-4 rounded-lg border border-border/60 bg-card">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="size-4 text-purple-500" />
-                <span className="text-sm font-medium text-foreground">质量模型</span>
-                <span className="text-xs text-muted-foreground">— 摘要生成</span>
-              </div>
-              <input
-                type="text"
-                value={settings.qualityModel}
-                onChange={e => { setSettings(prev => ({ ...prev, qualityModel: e.target.value })); setSaved(false) }}
-                placeholder="例：gpt-4o / claude-sonnet-4-6 / deepseek-chat"
-                className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* 保存 + 测试按钮 */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={cn(
-              "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
-              "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
-              saving && "opacity-60 cursor-wait"
-            )}
-          >
-            {saving ? "保存中..." : "保存设置"}
-          </button>
-
-          <button
-            onClick={() => setShowTestDialog(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border border-border/60 bg-background hover:bg-muted active:scale-[0.98]"
-          >
-            <FlaskConical className="size-4" />
-            测试连通性
-          </button>
-
-          {saved && (
-            <span className="inline-flex items-center gap-1 text-sm text-green-600">
-              <Check className="size-4" />
-              已保存
-            </span>
-          )}
-
-          {error && (
-            <span className="inline-flex items-center gap-1 text-sm text-destructive">
-              <AlertCircle className="size-4" />
-              {error}
-            </span>
-          )}
-        </div>
-
-        {/* 模型测试对话框 */}
-        <ModelTestDialog open={showTestDialog} onClose={() => setShowTestDialog(false)} />
-
-        <Separator />
-
-        {/* ─── 定时生成 ─── */}
-        <section>
-          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-6">
-            <Clock className="size-4" />
-            定时生成
-          </h2>
-
-          <div className="space-y-6">
-            {/* 启用开关 */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">启用定时生成</p>
-                <p className="text-xs text-muted-foreground mt-0.5">按计划自动生成每日日报</p>
-              </div>
-              <button
-                role="switch"
-                aria-checked={schedule.enabled}
-                onClick={() => { setSchedule(prev => ({ ...prev, enabled: !prev.enabled })); setScheduleSaved(false) }}
-                className={cn(
-                  "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30",
-                  schedule.enabled ? "bg-[var(--color-warm-accent)]" : "bg-muted"
-                )}
-              >
-                <span
-                  className={cn(
-                    "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform",
-                    schedule.enabled ? "translate-x-5" : "translate-x-0"
-                  )}
-                />
-              </button>
-            </div>
-
-            {/* Cron 表达式 */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">执行时间</label>
-              <input
-                type="text"
-                value={schedule.cronExpression}
-                onChange={e => { setSchedule(prev => ({ ...prev, cronExpression: e.target.value })); setScheduleSaved(false) }}
-                placeholder="0 6 * * *"
-                className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-              />
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {CRON_PRESETS.map(preset => (
-                  <button
-                    key={preset.value}
-                    onClick={() => { setSchedule(prev => ({ ...prev, cronExpression: preset.value })); setScheduleSaved(false) }}
-                    className={cn(
-                      "px-2 py-0.5 rounded text-xs transition-colors",
-                      schedule.cronExpression === preset.value
-                        ? "bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)] font-medium"
-                        : "bg-muted text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                标准 cron 格式：分 时 日 月 周（服务器本地时间）
-              </p>
-            </div>
-
-            {/* Telegram 通知 */}
-            <div className="p-4 rounded-lg border border-border/60 bg-card space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bell className="size-4 text-blue-500" />
-                  <span className="text-sm font-medium text-foreground">Telegram 通知</span>
-                </div>
+    <div className="mx-auto max-w-[1200px] px-4 pb-16 pt-8">
+      <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
+        {/* 左侧菜单 */}
+        <aside className="w-full shrink-0 sm:w-52">
+          <nav className="flex gap-1 overflow-x-auto sm:sticky sm:top-20 sm:flex-col sm:space-y-1 sm:overflow-visible">
+            {MENU_ITEMS.map(item => {
+              const Icon = item.icon
+              const isActive = activeSection === item.key
+              return (
                 <button
-                  role="switch"
-                  aria-checked={schedule.telegramEnabled}
-                  onClick={() => { setSchedule(prev => ({ ...prev, telegramEnabled: !prev.telegramEnabled })); setScheduleSaved(false) }}
+                  key={item.key}
+                  onClick={() => setActiveSection(item.key)}
                   className={cn(
-                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30",
-                    schedule.telegramEnabled ? "bg-[var(--color-warm-accent)]" : "bg-muted"
+                    "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left shrink-0",
+                    isActive
+                      ? "bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)]"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
-                  <span
-                    className={cn(
-                      "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform",
-                      schedule.telegramEnabled ? "translate-x-5" : "translate-x-0"
-                    )}
-                  />
+                  <Icon className="size-4" />
+                  <span>{item.label}</span>
                 </button>
+              )
+            })}
+          </nav>
+        </aside>
+
+        {/* 右侧内容 */}
+        <main className="flex-1 min-w-0">
+          {/* ─── 模型设置 ─── */}
+          {activeSection === 'model' && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="font-serif-display text-xl font-semibold text-foreground">模型设置</h2>
+                <p className="text-sm text-muted-foreground mt-1">配置 AI 模型的接入方式和参数</p>
               </div>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Bot Token</label>
-                  <input
-                    type="password"
-                    value={schedule.telegramBotToken}
-                    onChange={e => { setSchedule(prev => ({ ...prev, telegramBotToken: e.target.value })); setScheduleSaved(false) }}
-                    placeholder="123456:ABC-DEF..."
-                    className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Chat ID</label>
-                  <input
-                    type="text"
-                    value={schedule.telegramChatId}
-                    onChange={e => { setSchedule(prev => ({ ...prev, telegramChatId: e.target.value })); setScheduleSaved(false) }}
-                    placeholder="-1001234567890"
-                    className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-                  />
-                </div>
+              {/* 请求地址 */}
+              <section>
+                <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
+                  <Server className="size-4" />
+                  请求地址
+                </h2>
+                <input
+                  type="url"
+                  value={settings.baseUrl}
+                  onChange={e => { setSettings(prev => ({ ...prev, baseUrl: e.target.value })); setSaved(false) }}
+                  placeholder={settings.provider === 'anthropic' ? "https://api.anthropic.com" : "https://api.openai.com/v1"}
+                  className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  填写 API 服务地址。Anthropic 协议会在末尾自动拼接 /messages，OpenAI 协议会拼接 /chat/completions。
+                  例：MiniMax Anthropic 填 https://api.minimaxi.com/anthropic/v1，OpenAI 填 https://api.minimaxi.com/v1
+                </p>
+              </section>
 
-                <div className="flex items-center gap-3 pt-1">
+              {/* API Key */}
+              <section>
+                <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
+                  <Key className="size-4" />
+                  API Key
+                </h2>
+                {settings.hasEnvKey && (
+                  <p className="text-xs text-muted-foreground mb-2">
+                    已检测到环境变量中的 API Key，下方留空将使用环境变量
+                  </p>
+                )}
+                <input
+                  type="password"
+                  value={settings.apiKey}
+                  onChange={e => { setSettings(prev => ({ ...prev, apiKey: e.target.value })); setSaved(false) }}
+                  placeholder="sk-..."
+                  className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                />
+              </section>
+
+              {/* API 协议 */}
+              <section>
+                <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
+                  <Server className="size-4" />
+                  API 协议
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {API_PROTOCOLS.map(protocol => (
+                    <button
+                      key={protocol.id}
+                      onClick={() => handleProtocolChange(protocol.id)}
+                      className={cn(
+                        "flex flex-col items-start gap-1 p-3 rounded-lg border transition-all text-left",
+                        settings.provider === protocol.id
+                          ? "border-[var(--color-warm-accent)] bg-[var(--color-warm-accent)]/5"
+                          : "border-border/60 hover:border-border hover:bg-muted/50"
+                      )}
+                    >
+                      <span className="font-medium text-sm text-foreground">{protocol.name}</span>
+                      <span className="text-xs text-muted-foreground">{protocol.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* 模型名称 */}
+              <section>
+                <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-4">
+                  <Cpu className="size-4" />
+                  模型名称
+                </h2>
+
+                <div className="space-y-4">
+                  <div className="p-4 rounded-lg border border-border/60 bg-card">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="size-4 text-amber-500" />
+                      <span className="text-sm font-medium text-foreground">快速模型</span>
+                      <span className="text-xs text-muted-foreground">— 评分筛选、去重聚类</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={settings.fastModel}
+                      onChange={e => { setSettings(prev => ({ ...prev, fastModel: e.target.value })); setSaved(false) }}
+                      placeholder="例：gpt-4o-mini / claude-haiku-4-5-20251001 / deepseek-chat"
+                      className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                    />
+                  </div>
+
+                  <div className="p-4 rounded-lg border border-border/60 bg-card">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="size-4 text-purple-500" />
+                      <span className="text-sm font-medium text-foreground">质量模型</span>
+                      <span className="text-xs text-muted-foreground">— 摘要生成</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={settings.qualityModel}
+                      onChange={e => { setSettings(prev => ({ ...prev, qualityModel: e.target.value })); setSaved(false) }}
+                      placeholder="例：gpt-4o / claude-sonnet-4-6 / deepseek-chat"
+                      className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* 保存 + 测试按钮 */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={cn(
+                    "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
+                    saving && "opacity-60 cursor-wait"
+                  )}
+                >
+                  {saving ? "保存中..." : "保存设置"}
+                </button>
+
+                <button
+                  onClick={() => setShowTestDialog(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border border-border/60 bg-background hover:bg-muted active:scale-[0.98]"
+                >
+                  <FlaskConical className="size-4" />
+                  测试连通性
+                </button>
+
+                {saved && (
+                  <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                    <Check className="size-4" />
+                    已保存
+                  </span>
+                )}
+
+                {error && (
+                  <span className="inline-flex items-center gap-1 text-sm text-destructive">
+                    <AlertCircle className="size-4" />
+                    {error}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ─── 信息源 ─── */}
+          {activeSection === 'sources' && <SourcesSection />}
+
+          {/* ─── 定时任务 ─── */}
+          {activeSection === 'schedule' && (
+            <section>
+              <div className="mb-6">
+                <h2 className="font-serif-display text-xl font-semibold text-foreground">定时任务</h2>
+                <p className="text-sm text-muted-foreground mt-1">按计划自动生成每日日报，并可通过 Telegram 推送</p>
+              </div>
+
+              <div className="space-y-6">
+                {/* 启用开关 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">启用定时生成</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">按计划自动生成每日日报</p>
+                  </div>
                   <button
-                    onClick={handleTestTelegram}
-                    disabled={testSending || !schedule.telegramChatId}
+                    role="switch"
+                    aria-checked={schedule.enabled}
+                    onClick={() => { setSchedule(prev => ({ ...prev, enabled: !prev.enabled })); setScheduleSaved(false) }}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
-                      "border-border/60 bg-background hover:bg-muted active:scale-[0.98]",
-                      (testSending || !schedule.telegramChatId) && "opacity-50 cursor-not-allowed"
+                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30",
+                      schedule.enabled ? "bg-[var(--color-warm-accent)]" : "bg-muted"
                     )}
                   >
-                    <Send className="size-3" />
-                    {testSending ? "发送中..." : "发送测试"}
+                    <span
+                      className={cn(
+                        "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform",
+                        schedule.enabled ? "translate-x-5" : "translate-x-0"
+                      )}
+                    />
+                  </button>
+                </div>
+
+                {/* Cron 表达式 */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">执行时间</label>
+                  <input
+                    type="text"
+                    value={schedule.cronExpression}
+                    onChange={e => { setSchedule(prev => ({ ...prev, cronExpression: e.target.value })); setScheduleSaved(false) }}
+                    placeholder="0 6 * * *"
+                    className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                  />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {CRON_PRESETS.map(preset => (
+                      <button
+                        key={preset.value}
+                        onClick={() => { setSchedule(prev => ({ ...prev, cronExpression: preset.value })); setScheduleSaved(false) }}
+                        className={cn(
+                          "px-2 py-0.5 rounded text-xs transition-colors",
+                          schedule.cronExpression === preset.value
+                            ? "bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)] font-medium"
+                            : "bg-muted text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    标准 cron 格式：分 时 日 月 周（服务器本地时间）
+                  </p>
+                </div>
+
+                {/* Telegram 通知 */}
+                <div className="p-4 rounded-lg border border-border/60 bg-card space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bell className="size-4 text-blue-500" />
+                      <span className="text-sm font-medium text-foreground">Telegram 通知</span>
+                    </div>
+                    <button
+                      role="switch"
+                      aria-checked={schedule.telegramEnabled}
+                      onClick={() => { setSchedule(prev => ({ ...prev, telegramEnabled: !prev.telegramEnabled })); setScheduleSaved(false) }}
+                      className={cn(
+                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30",
+                        schedule.telegramEnabled ? "bg-[var(--color-warm-accent)]" : "bg-muted"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform",
+                          schedule.telegramEnabled ? "translate-x-5" : "translate-x-0"
+                        )}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">Bot Token</label>
+                      <input
+                        type="password"
+                        value={schedule.telegramBotToken}
+                        onChange={e => { setSchedule(prev => ({ ...prev, telegramBotToken: e.target.value })); setScheduleSaved(false) }}
+                        placeholder="123456:ABC-DEF..."
+                        className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">Chat ID</label>
+                      <input
+                        type="text"
+                        value={schedule.telegramChatId}
+                        onChange={e => { setSchedule(prev => ({ ...prev, telegramChatId: e.target.value })); setScheduleSaved(false) }}
+                        placeholder="-1001234567890"
+                        className="w-full px-3 py-2 rounded-lg border border-border/60 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-1">
+                      <button
+                        onClick={handleTestTelegram}
+                        disabled={testSending || !schedule.telegramChatId}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
+                          "border-border/60 bg-background hover:bg-muted active:scale-[0.98]",
+                          (testSending || !schedule.telegramChatId) && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <Send className="size-3" />
+                        {testSending ? "发送中..." : "发送测试"}
+                      </button>
+
+                      {testResult && (
+                        <span className={cn(
+                          "inline-flex items-center gap-1 text-xs",
+                          testResult.ok ? "text-green-600" : "text-destructive"
+                        )}>
+                          {testResult.ok
+                            ? <Check className="size-3" />
+                            : <AlertCircle className="size-3" />
+                          }
+                          {testResult.msg}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 保存按钮 */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleScheduleSave}
+                    disabled={scheduleSaving}
+                    className={cn(
+                      "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
+                      "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
+                      scheduleSaving && "opacity-60 cursor-wait"
+                    )}
+                  >
+                    {scheduleSaving ? "保存中..." : "保存设置"}
                   </button>
 
-                  {testResult && (
-                    <span className={cn(
-                      "inline-flex items-center gap-1 text-xs",
-                      testResult.ok ? "text-green-600" : "text-destructive"
-                    )}>
-                      {testResult.ok
-                        ? <Check className="size-3" />
-                        : <AlertCircle className="size-3" />
-                      }
-                      {testResult.msg}
+                  {scheduleSaved && (
+                    <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                      <Check className="size-4" />
+                      已保存
+                    </span>
+                  )}
+
+                  {scheduleError && (
+                    <span className="inline-flex items-center gap-1 text-sm text-destructive">
+                      <AlertCircle className="size-4" />
+                      {scheduleError}
                     </span>
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* 保存按钮 */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleScheduleSave}
-                disabled={scheduleSaving}
-                className={cn(
-                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
-                  "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]",
-                  scheduleSaving && "opacity-60 cursor-wait"
-                )}
-              >
-                {scheduleSaving ? "保存中..." : "保存设置"}
-              </button>
-
-              {scheduleSaved && (
-                <span className="inline-flex items-center gap-1 text-sm text-green-600">
-                  <Check className="size-4" />
-                  已保存
-                </span>
-              )}
-
-              {scheduleError && (
-                <span className="inline-flex items-center gap-1 text-sm text-destructive">
-                  <AlertCircle className="size-4" />
-                  {scheduleError}
-                </span>
-              )}
-            </div>
-          </div>
-        </section>
+            </section>
+          )}
+        </main>
       </div>
+
+      {/* 模型测试对话框（全局挂载，避免切换 section 时卸载） */}
+      <ModelTestDialog open={showTestDialog} onClose={() => setShowTestDialog(false)} />
     </div>
   )
 }
