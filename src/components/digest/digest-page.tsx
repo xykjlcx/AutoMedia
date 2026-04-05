@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
+import { useReadingPosition } from "@/components/hooks/use-reading-position"
 import type { DigestItem } from "@/components/digest/digest-card"
 
 interface DigestData {
@@ -27,6 +28,9 @@ export function DigestPage() {
 
   const dateParam = searchParams.get("date") || format(new Date(), "yyyy-MM-dd")
   const [currentDate, setCurrentDate] = useState(dateParam)
+
+  // 阅读位置记忆
+  useReadingPosition("/", currentDate)
   const [data, setData] = useState<DigestData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabKey>("recommended")
