@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "setup:fonts": "node scripts/ensure-fonts.mjs",
+    "postinstall": "node scripts/ensure-fonts.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.66",
