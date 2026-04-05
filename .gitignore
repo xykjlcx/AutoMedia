@@ -38,6 +38,12 @@ yarn-error.log*
 # database data directory
 /data/
 
+# superpowers
+.superpowers/
+
+# generated card images
+data/cards/
+
 # vercel
 .vercel
 
