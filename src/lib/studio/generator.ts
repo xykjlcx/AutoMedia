@@ -5,6 +5,7 @@ import { xhsSchema, buildXhsPrompt, formatXhsToMarkdown } from './platforms/xhs'
 import { twitterSchema, buildTwitterPrompt, formatTwitterToMarkdown } from './platforms/twitter'
 import { articleSchema, buildArticlePrompt, formatArticleToMarkdown } from './platforms/article'
 import { getStyleProfile, shouldUpdateStyleProfile, updateStyleProfile } from './style-learning'
+import { snapshotDraft } from './versions'
 
 const platformConfigs = {
   xhs: { schema: xhsSchema, buildPrompt: buildXhsPrompt, formatToMarkdown: formatXhsToMarkdown },
@@ -35,6 +36,9 @@ export async function generateContent(draftId: string) {
   // 组装 prompt
   const prompt = config.buildPrompt(sources, stylePrompt)
 
+  // 调用 AI 之前 snapshot 当前内容（若非空），作为"重新生成前的版本"
+  snapshotDraft(draftId, 'pre_regenerate')
+
   // 调用 AI
   const { object } = await generateObject({
     model: getModels().quality,
@@ -53,6 +57,9 @@ export async function generateContent(draftId: string) {
     title: (object as { title?: string }).title || draft.title,
     aiPrompt: prompt,
   })
+
+  // AI 生成完成后 snapshot 新内容
+  snapshotDraft(draftId, 'ai_generate')
 
   // 异步触发风格画像更新，不阻塞本次生成返回
   if (shouldUpdateStyleProfile(platform)) {

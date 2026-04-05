@@ -7,9 +7,10 @@ import { DraftEditor } from './draft-editor'
 import { PlatformSelector } from './platform-selector'
 import { CardPreview } from './card-preview'
 import { ExportDialog } from './export-dialog'
-import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Download, Loader2, History } from 'lucide-react'
+import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Download, Loader2, History, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DraftHistory } from './draft-history'
+import { DraftVersions } from './draft-versions'
 import { trackEvent } from '@/components/hooks/use-track-event'
 import type { Platform } from './platform-selector'
 
@@ -33,6 +34,7 @@ export function StudioPage() {
   const [leftOpen, setLeftOpen] = useState(false)
   const [rightOpen, setRightOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [versionsOpen, setVersionsOpen] = useState(false)
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
   const [generating, setGenerating] = useState(false)
   const [showCardPreview, setShowCardPreview] = useState(false)
@@ -165,6 +167,19 @@ export function StudioPage() {
           />
         )}
 
+        {/* 版本历史抽屉 */}
+        {versionsOpen && draft.id && (
+          <DraftVersions
+            draftId={draft.id}
+            onClose={() => setVersionsOpen(false)}
+            onRestored={async () => {
+              if (draft.id) {
+                await loadDraft(draft.id)
+              }
+            }}
+          />
+        )}
+
         {/* 左侧：素材面板 */}
         {leftOpen && (
           <div className="w-72 border-r border-border/60 overflow-y-auto shrink-0 bg-card">
@@ -194,6 +209,18 @@ export function StudioPage() {
               >
                 <History className="size-4" />
               </button>
+              {draft.id && (
+                <button
+                  onClick={() => setVersionsOpen(!versionsOpen)}
+                  className={cn(
+                    'p-1.5 rounded-md transition-colors',
+                    versionsOpen ? 'bg-[var(--color-warm-accent)]/10 text-[var(--color-warm-accent)]' : 'hover:bg-muted text-muted-foreground'
+                  )}
+                  title="版本历史"
+                >
+                  <RotateCcw className="size-4" />
+                </button>
+              )}
               <button
                 onClick={() => setLeftOpen(!leftOpen)}
                 className={cn(

@@ -213,6 +213,30 @@ sqlite.exec(`
 `)
 sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_weekly_insights_week ON weekly_insights(week_start)`)
 
+// Spec 2：Studio 草稿版本历史
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS draft_versions (
+    id TEXT PRIMARY KEY,
+    draft_id TEXT NOT NULL REFERENCES drafts(id) ON DELETE CASCADE,
+    title TEXT NOT NULL DEFAULT '',
+    content TEXT NOT NULL DEFAULT '',
+    platform TEXT NOT NULL,
+    ai_prompt TEXT DEFAULT '',
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_draft_versions_draft ON draft_versions(draft_id, created_at DESC)`)
+
+// Spec 2：ai_settings 追加图像生成相关字段（幂等 try/catch）
+for (const col of ['image_provider', 'image_base_url', 'image_api_key', 'image_model']) {
+  try {
+    sqlite.exec(`ALTER TABLE ai_settings ADD COLUMN ${col} TEXT DEFAULT ''`)
+  } catch {
+    // 列已存在，忽略
+  }
+}
+
 export const db = drizzle(sqlite, { schema })
 
 import { seedDefaultSources, migrateRssSources } from './seed'

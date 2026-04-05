@@ -49,6 +49,11 @@ export const aiSettings = sqliteTable('ai_settings', {
   apiKey: text('api_key').default(''),
   fastModel: text('fast_model').notNull().default('claude-haiku-4-5-20251001'), // 评分/聚类用的快速模型
   qualityModel: text('quality_model').notNull().default('claude-sonnet-4-6'), // 摘要用的高质量模型
+  // Spec 2：图片生成 Provider 配置（可选）
+  imageProvider: text('image_provider').default(''), // '' | 'google' | 'openai'
+  imageBaseUrl: text('image_base_url').default(''), // OpenAI 兼容接口的 base URL
+  imageApiKey: text('image_api_key').default(''),
+  imageModel: text('image_model').default(''), // 如 gemini-2.5-flash-image-preview / gpt-image-1
   updatedAt: text('updated_at').notNull(),
 })
 
@@ -250,3 +255,15 @@ export const weeklyInsights = sqliteTable('weekly_insights', {
 }, (table) => ({
   weekUnique: uniqueIndex('idx_weekly_insights_week').on(table.weekStart),
 }))
+
+// Spec 2：草稿版本快照
+export const draftVersions = sqliteTable('draft_versions', {
+  id: text('id').primaryKey(),
+  draftId: text('draft_id').notNull().references(() => drafts.id, { onDelete: 'cascade' }),
+  title: text('title').notNull().default(''),
+  content: text('content').notNull().default(''),
+  platform: text('platform').notNull(),
+  aiPrompt: text('ai_prompt').default(''),
+  source: text('source').notNull(), // 'ai_generate' | 'manual_save' | 'pre_regenerate'
+  createdAt: text('created_at').notNull(),
+})
