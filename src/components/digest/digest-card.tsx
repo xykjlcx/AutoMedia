@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { FavoriteButton } from "@/components/favorites/favorite-button"
 import { RatingButtons } from "@/components/digest/rating-buttons"
+import { ReadingQueueButton } from "@/components/digest/reading-queue-button"
 import { CompareModal } from "@/components/digest/compare-modal"
 import { trackEvent } from "@/components/hooks/use-track-event"
 
@@ -99,6 +100,7 @@ export function DigestCard({ item, index = 0, selectable, selected, onSelect }: 
           </div>
           <div className="flex items-center gap-1">
             <RatingButtons digestItemId={item.id} initialRating={item.userRating} />
+            <ReadingQueueButton digestItemId={item.id} />
             <FavoriteButton
               digestItemId={item.id}
               isFavorited={item.isFavorited}

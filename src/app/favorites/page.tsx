@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { Search, Star, Tag, X } from "lucide-react"
-import { format, parseISO } from "date-fns"
-import { zhCN } from "date-fns/locale"
 import { Separator } from "@/components/ui/separator"
 import { DigestCard, type DigestItem } from "@/components/digest/digest-card"
+import { FavoritesTabs } from "@/components/favorites/favorites-tabs"
 import { useReadingPosition } from "@/components/hooks/use-reading-position"
 
 interface FavoriteItem {
@@ -99,6 +98,96 @@ export default function FavoritesPage() {
       tags: f.favorite.tags,
     }))
 
+  // 收藏 Tab 的主体内容（搜索 + 标签 + 列表 / 空态）
+  const favoritesContent = favorites.length === 0 ? (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="p-4 rounded-full bg-muted mb-4">
+        <Star className="size-8 text-muted-foreground" />
+      </div>
+      <h2 className="font-serif-display text-lg font-semibold text-foreground mb-1">
+        暂无收藏
+      </h2>
+      <p className="text-sm text-muted-foreground max-w-xs">
+        在日报中点击星标按钮，即可将感兴趣的资讯添加到收藏
+      </p>
+    </div>
+  ) : (
+    <>
+      {/* 搜索 + 标签过滤 */}
+      <div className="space-y-3 mb-6">
+        {/* 搜索栏 */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="搜索收藏..."
+            className="w-full pl-9 pr-4 py-2 rounded-lg border border-border/60 bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)]/50 transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted transition-colors"
+            >
+              <X className="size-3.5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+
+        {/* 标签筛选 */}
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  activeTag === tag
+                    ? "bg-[var(--color-warm-accent)] text-white"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Tag className="size-3" />
+                {tag}
+              </button>
+            ))}
+            {activeTag && (
+              <button
+                onClick={() => setActiveTag(null)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="size-3" />
+                清除筛选
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 收藏列表 */}
+      {filtered.length === 0 ? (
+        <p className="text-center text-sm text-muted-foreground py-8">
+          没有匹配的收藏
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {digestItems.map((item, i) => (
+            <div key={item.favoriteId}>
+              <DigestCard item={item} index={i} />
+              {/* 收藏备注 */}
+              {item.note && (
+                <div className="ml-[3px] pl-4 mt-1 text-xs text-muted-foreground italic border-l-2 border-border/40">
+                  {item.note}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )
+
   return (
     <div className="mx-auto max-w-[720px] px-4 pb-16">
       {/* 页面标题 */}
@@ -121,94 +210,8 @@ export default function FavoritesPage() {
             加载中...
           </div>
         </div>
-      ) : favorites.length === 0 ? (
-        /* 空状态 */
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="p-4 rounded-full bg-muted mb-4">
-            <Star className="size-8 text-muted-foreground" />
-          </div>
-          <h2 className="font-serif-display text-lg font-semibold text-foreground mb-1">
-            暂无收藏
-          </h2>
-          <p className="text-sm text-muted-foreground max-w-xs">
-            在日报中点击星标按钮，即可将感兴趣的资讯添加到收藏
-          </p>
-        </div>
       ) : (
-        <>
-          {/* 搜索 + 标签过滤 */}
-          <div className="space-y-3 mb-6">
-            {/* 搜索栏 */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="搜索收藏..."
-                className="w-full pl-9 pr-4 py-2 rounded-lg border border-border/60 bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)]/50 transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted transition-colors"
-                >
-                  <X className="size-3.5 text-muted-foreground" />
-                </button>
-              )}
-            </div>
-
-            {/* 标签筛选 */}
-            {allTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {allTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                      activeTag === tag
-                        ? "bg-[var(--color-warm-accent)] text-white"
-                        : "bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <Tag className="size-3" />
-                    {tag}
-                  </button>
-                ))}
-                {activeTag && (
-                  <button
-                    onClick={() => setActiveTag(null)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <X className="size-3" />
-                    清除筛选
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* 收藏列表 */}
-          {filtered.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-8">
-              没有匹配的收藏
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {digestItems.map((item, i) => (
-                <div key={item.favoriteId}>
-                  <DigestCard item={item} index={i} />
-                  {/* 收藏备注 */}
-                  {item.note && (
-                    <div className="ml-[3px] pl-4 mt-1 text-xs text-muted-foreground italic border-l-2 border-border/40">
-                      {item.note}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+        <FavoritesTabs favoritesContent={favoritesContent} />
       )}
     </div>
   )
