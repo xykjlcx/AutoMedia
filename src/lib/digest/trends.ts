@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
-import { getModels } from './client'
-import { extractJson } from './utils'
+import { getModels } from '@/lib/ai/client'
+import { extractJson } from '@/lib/ai/utils'
 import { db } from '../db/index'
 
 // 分析当天条目与过去 7 天的话题重叠，标记趋势

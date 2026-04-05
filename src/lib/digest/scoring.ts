@@ -1,8 +1,9 @@
 import { generateText } from 'ai'
-import { getModels } from './client'
-import { extractJson } from './utils'
+import { getModels } from '@/lib/ai/client'
+import { extractJson } from '@/lib/ai/utils'
+import { batchProcess } from '@/lib/ai/batch'
 import { getPreferenceProfile } from './preference'
-import type { CollectedItem } from '../collectors/types'
+import type { CollectedItem } from './collectors/types'
 
 export interface ScoredItem extends CollectedItem {
   aiScore: number
@@ -30,31 +31,21 @@ export async function scoreItems(
   items: CollectedItem[],
   onProgress?: (done: number) => Promise<void> | void,
 ): Promise<ScoreResult> {
-  const results: ScoredItem[] = []
-  let failedCount = 0
-  let doneCount = 0
-  const batchSize = 20
-  const concurrency = 2
-
   // 获取偏好画像（在循环外只调一次）
   const preferenceProfile = getPreferenceProfile()
   const preferenceSection = preferenceProfile
     ? `\n用户个人偏好（请据此调整评分权重）：\n${preferenceProfile}\n`
     : ''
 
-  // 切分批次
-  const batches: CollectedItem[][] = []
-  for (let i = 0; i < items.length; i += batchSize) {
-    batches.push(items.slice(i, i + batchSize))
-  }
+  const { results, failedCount } = await batchProcess({
+    items,
+    batchSize: 20,
+    concurrency: 2,
+    process: async (batch) => {
+      const itemList = batch.map((item, idx) => (
+        `[${idx}] 来源:${item.source} | 标题:${item.title}\n内容摘要:${item.content.slice(0, 300)}`
+      )).join('\n\n')
 
-  // 处理单个批次
-  const processBatch = async (batch: CollectedItem[]): Promise<void> => {
-    const itemList = batch.map((item, idx) => (
-      `[${idx}] 来源:${item.source} | 标题:${item.title}\n内容摘要:${item.content.slice(0, 300)}`
-    )).join('\n\n')
-
-    try {
       const { text } = await generateText({
         model: getModels().fast,
         prompt: `你是一个资讯筛选 AI。请对以下资讯条目进行评分。
@@ -76,17 +67,16 @@ ${itemList}`,
 
       const jsonStr = extractJson(text)
       if (!jsonStr) {
-        console.error('[scoring] 无法提取 JSON')
-        failedCount += batch.length
-        return
+        throw new Error('无法提取 JSON')
       }
 
       const scores: Array<{ index: number; relevance: number; novelty: number; impact: number }> = JSON.parse(jsonStr)
+      const scored: ScoredItem[] = []
       for (const score of scores) {
         const item = batch[score.index]
         if (!item) continue
         const aiScore = score.relevance * 0.4 + score.novelty * 0.3 + score.impact * 0.3
-        results.push({
+        scored.push({
           ...item,
           aiScore: Math.round(aiScore * 10) / 10,
           scoreBreakdown: {
@@ -96,24 +86,10 @@ ${itemList}`,
           },
         })
       }
-    } catch (err) {
-      console.error('[scoring] 评分失败，跳过当前批次:', err)
-      failedCount += batch.length
-    }
-    doneCount += batch.length
-    await onProgress?.(Math.min(doneCount, items.length))
-  }
-
-  // 并发控制：最多 concurrency 个批次同时执行
-  let cursor = 0
-  const runNext = async (): Promise<void> => {
-    while (cursor < batches.length) {
-      const idx = cursor++
-      await processBatch(batches[idx])
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(concurrency, batches.length) }, () => runNext()))
+      return scored
+    },
+    onProgress,
+  })
 
   return { items: results, failedCount }
 }
-

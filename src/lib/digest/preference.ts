@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import { getModels } from './client'
+import { getModels } from '@/lib/ai/client'
 import { db } from '../db/index'
 import { userProfile } from '../db/schema'
 import { eq } from 'drizzle-orm'

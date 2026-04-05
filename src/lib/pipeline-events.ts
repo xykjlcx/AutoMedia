@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import type { PipelineProgress } from './pipeline'
+import type { PipelineProgress } from './digest/pipeline'
 
 interface ProgressEvent {
   runId: string

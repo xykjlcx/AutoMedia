@@ -2,7 +2,7 @@ import { schedule as cronSchedule, validate as cronValidate, type ScheduledTask 
 import { db } from './db/index'
 import { scheduleConfig } from './db/schema'
 import { eq } from 'drizzle-orm'
-import { runDigestPipeline, isDigestRunning } from './pipeline'
+import { runDigestPipeline, isDigestRunning } from './digest/pipeline'
 
 let currentJob: ScheduledTask | null = null
 

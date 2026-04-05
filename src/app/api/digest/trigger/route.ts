@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { runDigestPipeline, isDigestRunning } from '@/lib/pipeline'
+import { runDigestPipeline, isDigestRunning } from '@/lib/digest/pipeline'
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))

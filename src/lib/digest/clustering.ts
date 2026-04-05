@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
-import { getModels } from './client'
-import { extractJson } from './utils'
+import { getModels } from '@/lib/ai/client'
+import { extractJson } from '@/lib/ai/utils'
 import type { ScoredItem } from './scoring'
 
 export interface ClusteredItem extends ScoredItem {
