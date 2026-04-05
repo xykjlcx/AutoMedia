@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { ExternalLink, ChevronDown, Users, Check } from "lucide-react"
+import { ExternalLink, ChevronDown, Users, Check, GitCompareArrows } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { FavoriteButton } from "@/components/favorites/favorite-button"
 import { RatingButtons } from "@/components/digest/rating-buttons"
+import { CompareModal } from "@/components/digest/compare-modal"
 
 export interface DigestItem {
   id: string
@@ -38,6 +39,7 @@ interface DigestCardProps {
 export function DigestCard({ item, index = 0, selectable, selected, onSelect }: DigestCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [isRead, setIsRead] = useState(item.isRead ?? false)
+  const [compareOpen, setCompareOpen] = useState(false)
   const sourceColor = SOURCE_COLORS[item.source] || "#9C9590"
   const sourceMeta = SOURCE_META[item.source]
 
@@ -131,13 +133,25 @@ export function DigestCard({ item, index = 0, selectable, selected, onSelect }: 
           </div>
         )}
 
-        {/* 跨源讨论标签 */}
+        {/* 跨源讨论标签 + 对比入口 */}
         {crossSourceLabel && (
-          <div className="flex items-center gap-1.5 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--color-warm-accent)]/8 text-xs text-[var(--color-warm-accent)] font-medium">
               <Users className="size-3" />
               {crossSourceLabel} 也在讨论
             </span>
+            {item.clusterId && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCompareOpen(true)
+                }}
+                className="inline-flex items-center gap-1 text-xs text-[var(--color-warm-accent)] hover:text-[var(--color-warm-accent)] hover:underline transition-colors"
+              >
+                <GitCompareArrows className="size-3" />
+                查看对比
+              </button>
+            )}
           </div>
         )}
 
@@ -175,6 +189,14 @@ export function DigestCard({ item, index = 0, selectable, selected, onSelect }: 
           </div>
         </div>
       </div>
+
+      {/* 多源对比 modal */}
+      {compareOpen && item.clusterId && (
+        <CompareModal
+          clusterId={item.clusterId}
+          onClose={() => setCompareOpen(false)}
+        />
+      )}
     </article>
   )
 }
