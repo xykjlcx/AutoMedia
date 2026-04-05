@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { EntityGraph } from "@/components/insights/entity-graph"
 import { CrossSourceAlerts } from "@/components/insights/cross-source-alerts"
 import { CompareViews } from "@/components/insights/compare-views"
+import { WeeklyInsightCard } from "@/components/insights/weekly-insight-card"
 import { useReadingPosition } from "@/components/hooks/use-reading-position"
 import { trackEvent } from "@/components/hooks/use-track-event"
 
@@ -58,6 +59,8 @@ export default function InsightsPage() {
       </div>
 
       <Separator className="mb-8" />
+
+      <WeeklyInsightCard />
 
       {/* 手动提取入口 */}
       <div className="flex items-center justify-end mb-6">
