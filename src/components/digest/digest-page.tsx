@@ -7,6 +7,7 @@ import { Newspaper, Sparkles, List } from "lucide-react"
 import { DateNav } from "@/components/digest/date-nav"
 import { DigestTrigger } from "@/components/digest/digest-trigger"
 import { DigestCard } from "@/components/digest/digest-card"
+import { TldrCard } from "./tldr-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
@@ -132,6 +133,8 @@ export function DigestPage() {
         onComplete={handleGenerateComplete}
         hasExistingDigest={hasDigest}
       />
+
+      {!loading && hasDigest && <TldrCard date={currentDate} />}
 
       {loading && (
         <div className="grid grid-cols-2 gap-4 mt-6">

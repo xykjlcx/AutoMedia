@@ -14,6 +14,7 @@ import { sendDigestNotification, sendCrossSourceAlerts } from '@/lib/notify'
 import { detectCrossSourceAlerts } from './cross-source-alert'
 import { shouldUpdateProfile, updatePreferenceProfile } from './preference'
 import { pipelineEvents } from '@/lib/pipeline-events'
+import { generateDailyTldr } from './tldr'
 
 // ── 进度结构定义 ──
 
@@ -334,6 +335,15 @@ export async function runDigestPipeline(date: string): Promise<string> {
 
     progress.timing!.entityExtract = Math.round((Date.now() - entityStartTime) / 1000)
     await saveProgress(runId, progress, date)
+
+    // ── Stage 4: 今日三件事 TL;DR（不阻塞，失败不影响 pipeline） ──
+    try {
+      progress.detail = '生成今日三件事简报...'
+      await saveProgress(runId, progress, date)
+      await generateDailyTldr(date)
+    } catch (err) {
+      console.error('[pipeline] TL;DR 生成失败:', err)
+    }
 
     // 实体提取完成后，检测破圈预警并推送（fire and forget）
     try {

@@ -201,3 +201,52 @@ export const readingPosition = sqliteTable('reading_position', {
   scrollY: integer('scroll_y').notNull(), // 滚动位置
   updatedAt: text('updated_at').notNull(),
 })
+
+// 今日三件事 TL;DR（每天一条）
+export const dailyTldrs = sqliteTable('daily_tldrs', {
+  id: text('id').primaryKey(),
+  digestDate: text('digest_date').notNull(),
+  headline: text('headline').notNull(),
+  items: text('items', { mode: 'json' }).$type<Array<{ title: string; why: string; digestItemId: string }>>().notNull(),
+  observation: text('observation').notNull(),
+  generatedAt: text('generated_at').notNull(),
+}, (table) => ({
+  dateUnique: uniqueIndex('idx_daily_tldrs_date').on(table.digestDate),
+}))
+
+// 稍后读队列
+export const readingQueue = sqliteTable('reading_queue', {
+  id: text('id').primaryKey(),
+  digestItemId: text('digest_item_id').notNull().references(() => digestItems.id, { onDelete: 'cascade' }),
+  addedAt: text('added_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  readAt: text('read_at'),
+}, (table) => ({
+  itemUnique: uniqueIndex('idx_reading_queue_item').on(table.digestItemId),
+}))
+
+// 实体订阅
+export const entitySubscriptions = sqliteTable('entity_subscriptions', {
+  id: text('id').primaryKey(),
+  entityId: text('entity_id').notNull().references(() => topicEntities.id, { onDelete: 'cascade' }),
+  createdAt: text('created_at').notNull(),
+  lastNotifiedAt: text('last_notified_at'),
+  notifyCount: integer('notify_count').default(0),
+}, (table) => ({
+  entityUnique: uniqueIndex('idx_entity_subscriptions_entity').on(table.entityId),
+}))
+
+// 每周洞察摘要
+export const weeklyInsights = sqliteTable('weekly_insights', {
+  id: text('id').primaryKey(),
+  weekStart: text('week_start').notNull(),
+  weekEnd: text('week_end').notNull(),
+  content: text('content', { mode: 'json' }).$type<{
+    highlights: Array<{ title: string; insight: string; source: string }>
+    observation: string
+    keyEntities: Array<{ id: string; name: string; type: string; mentionCount: number }>
+  }>().notNull(),
+  generatedAt: text('generated_at').notNull(),
+}, (table) => ({
+  weekUnique: uniqueIndex('idx_weekly_insights_week').on(table.weekStart),
+}))

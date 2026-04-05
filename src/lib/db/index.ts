@@ -166,6 +166,53 @@ sqlite.exec(`
 `)
 sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_reading_position_path_key ON reading_position(page_path, page_key)`)
 
+// Spec 1：读-洞察体验升级表
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS daily_tldrs (
+    id TEXT PRIMARY KEY,
+    digest_date TEXT NOT NULL,
+    headline TEXT NOT NULL,
+    items TEXT NOT NULL,
+    observation TEXT NOT NULL,
+    generated_at TEXT NOT NULL
+  )
+`)
+sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_tldrs_date ON daily_tldrs(digest_date)`)
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS reading_queue (
+    id TEXT PRIMARY KEY,
+    digest_item_id TEXT NOT NULL REFERENCES digest_items(id) ON DELETE CASCADE,
+    added_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    read_at TEXT
+  )
+`)
+sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_reading_queue_item ON reading_queue(digest_item_id)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_reading_queue_expires ON reading_queue(expires_at)`)
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS entity_subscriptions (
+    id TEXT PRIMARY KEY,
+    entity_id TEXT NOT NULL REFERENCES topic_entities(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    last_notified_at TEXT,
+    notify_count INTEGER DEFAULT 0
+  )
+`)
+sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_entity_subscriptions_entity ON entity_subscriptions(entity_id)`)
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS weekly_insights (
+    id TEXT PRIMARY KEY,
+    week_start TEXT NOT NULL,
+    week_end TEXT NOT NULL,
+    content TEXT NOT NULL,
+    generated_at TEXT NOT NULL
+  )
+`)
+sqlite.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_weekly_insights_week ON weekly_insights(week_start)`)
+
 export const db = drizzle(sqlite, { schema })
 
 import { seedDefaultSources, migrateRssSources } from './seed'
