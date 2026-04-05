@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
 import { GraphDrawer } from "./graph-drawer"
+import { EntitySubscribeButton } from "./entity-subscribe-button"
 import { trackEvent } from "@/components/hooks/use-track-event"
 
 // ==================== Types ====================
@@ -238,11 +239,14 @@ function DetailPanel({
     <div className={cn("space-y-5", loading && "opacity-60 transition-opacity")}>
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Icon className={cn("size-5", config.color)} />
-          <h3 className="font-serif-display text-xl font-semibold text-foreground">
-            {entity.name}
-          </h3>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon className={cn("size-5 shrink-0", config.color)} />
+            <h3 className="font-serif-display text-xl font-semibold text-foreground truncate">
+              {entity.name}
+            </h3>
+          </div>
+          <EntitySubscribeButton entityId={entity.id} />
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className={cn("font-medium", config.color)}>{config.label}</span>

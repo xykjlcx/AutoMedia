@@ -2,6 +2,7 @@ import { db } from './db/index'
 import { scheduleConfig } from './db/schema'
 import { eq } from 'drizzle-orm'
 import type { CrossSourceAlert } from './digest/cross-source-alert'
+import type { SubscriptionMatch } from './insights/entity-subscription'
 
 export async function sendDigestNotification(date: string, itemCount: number) {
   try {
@@ -86,5 +87,45 @@ export async function sendCrossSourceAlerts(alerts: CrossSourceAlert[]) {
     })
   } catch (err) {
     console.error('[notify] 破圈预警推送失败:', err)
+  }
+}
+
+// 实体订阅推送：订阅的实体在当天出现时通知
+const ENTITY_TYPE_LABELS: Record<string, string> = {
+  person: '人物',
+  company: '公司',
+  product: '产品',
+  technology: '技术',
+}
+
+export async function sendEntityAlerts(matches: SubscriptionMatch[]) {
+  if (matches.length === 0) return
+  try {
+    const rows = db.select().from(scheduleConfig).where(eq(scheduleConfig.id, 'default')).all()
+    if (rows.length === 0) return
+    const config = rows[0]
+    if (!config.telegramEnabled || !config.telegramBotToken || !config.telegramChatId) return
+
+    const appUrl = process.env.APP_URL || 'http://localhost:3000'
+    const lines: string[] = ['🔔 你关注的话题出现了', '']
+
+    for (const m of matches.slice(0, 5)) {
+      const label = ENTITY_TYPE_LABELS[m.entityType] || m.entityType
+      lines.push(`▸ ${m.entityName} (${label})`)
+      lines.push(`  ${m.newArticles.length} 篇新文章`)
+      if (m.newArticles[0]) {
+        lines.push(`  · ${m.newArticles[0].title.slice(0, 40)}`)
+      }
+      lines.push('')
+    }
+    lines.push(`🔗 详情：${appUrl}/insights`)
+
+    await fetch(`https://api.telegram.org/bot${config.telegramBotToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: config.telegramChatId, text: lines.join('\n') }),
+    })
+  } catch (err) {
+    console.error('[notify] 实体订阅推送失败:', err)
   }
 }

@@ -10,8 +10,9 @@ import { summarizeItems } from './summarize'
 import { analyzeTrends } from './trends'
 import { extractEntities } from './entity-extract'
 import type { CollectedItem } from './collectors/types'
-import { sendDigestNotification, sendCrossSourceAlerts } from '@/lib/notify'
+import { sendDigestNotification, sendCrossSourceAlerts, sendEntityAlerts } from '@/lib/notify'
 import { detectCrossSourceAlerts } from './cross-source-alert'
+import { findSubscriptionsToNotify, markNotified } from '@/lib/insights/entity-subscription'
 import { shouldUpdateProfile, updatePreferenceProfile } from './preference'
 import { pipelineEvents } from '@/lib/pipeline-events'
 import { generateDailyTldr } from './tldr'
@@ -353,6 +354,27 @@ export async function runDigestPipeline(date: string): Promise<string> {
       )
     } catch (err) {
       console.error('[pipeline] 破圈预警检测失败:', err)
+    }
+
+    // ── 实体订阅推送 ──
+    try {
+      // 查询当天所有被提及的实体 id
+      const entityRows = db.$client.prepare(`
+        SELECT DISTINCT ar.entity_id
+        FROM article_relations ar
+        JOIN digest_items di ON di.id = ar.digest_item_id
+        WHERE di.digest_date = ?
+      `).all(date) as Array<{ entity_id: string }>
+      const entityIds = entityRows.map(r => r.entity_id)
+      const matches = findSubscriptionsToNotify(entityIds, date)
+      if (matches.length > 0) {
+        sendEntityAlerts(matches).catch(err =>
+          console.error('[pipeline] 实体订阅推送失败:', err)
+        )
+        markNotified(matches.map(m => m.subscriptionId))
+      }
+    } catch (err) {
+      console.error('[pipeline] 实体订阅检测失败:', err)
     }
 
     // 统计当天总数
