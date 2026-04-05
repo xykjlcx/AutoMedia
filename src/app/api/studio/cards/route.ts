@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { generateObject } from 'ai'
 import { z } from 'zod'
 import { getModels } from '@/lib/ai/client'
-import { satoriRenderer } from '@/lib/studio/card-renderer'
+import { satoriRenderer, DEFAULT_TEMPLATE_ID, CARD_TEMPLATES } from '@/lib/studio/card-renderer'
 import { getDraft } from '@/lib/studio/queries'
 import { db } from '@/lib/db/index'
 import { shareCards, digestItems } from '@/lib/db/schema'
@@ -16,12 +16,30 @@ const cardCopySchema = z.object({
   summary: z.string().describe('卡片摘要，50-100 字，突出核心要点'),
 })
 
+// GET: 返回可用模板清单，前端用于渲染选择器
+export async function GET() {
+  return NextResponse.json({
+    templates: CARD_TEMPLATES.map((t) => ({
+      id: t.id,
+      name: t.name,
+      description: t.description,
+    })),
+    defaultTemplateId: DEFAULT_TEMPLATE_ID,
+  })
+}
+
 export async function POST(req: Request) {
-  const { draftId, digestItemId } = await req.json()
+  const { draftId, digestItemId, template } = await req.json()
 
   if (!draftId && !digestItemId) {
     return NextResponse.json({ error: '需要 draftId 或 digestItemId' }, { status: 400 })
   }
+
+  // 校验 templateId，非法值回退到默认
+  const templateId =
+    typeof template === 'string' && CARD_TEMPLATES.some((t) => t.id === template)
+      ? template
+      : DEFAULT_TEMPLATE_ID
 
   try {
     let title: string
@@ -50,13 +68,16 @@ export async function POST(req: Request) {
       prompt: `为以下内容生成分享卡片文案：\n\n标题：${title}\n内容：${content}\n\n要求简洁有力，适合朋友圈/社群传播。`,
     })
 
-    // 渲染卡片图片
-    const imagePath = await satoriRenderer.render({
-      title: copy.title,
-      summary: copy.summary,
-      source,
-      date: new Date().toISOString().slice(0, 10),
-    })
+    // 渲染卡片图片（带模板选择）
+    const imagePath = await satoriRenderer.render(
+      {
+        title: copy.title,
+        summary: copy.summary,
+        source,
+        date: new Date().toISOString().slice(0, 10),
+      },
+      templateId,
+    )
 
     // 保存卡片记录到数据库
     const cardId = uuid()
@@ -64,7 +85,7 @@ export async function POST(req: Request) {
       id: cardId,
       draftId: draftId || null,
       digestItemId: digestItemId || null,
-      template: 'default',
+      template: templateId,
       copyText: `${copy.title}\n${copy.summary}`,
       imagePath,
       createdAt: new Date().toISOString(),
@@ -78,6 +99,7 @@ export async function POST(req: Request) {
       id: cardId,
       copy,
       image: `data:image/png;base64,${base64}`,
+      templateId,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
