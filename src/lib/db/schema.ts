@@ -106,3 +106,45 @@ export const scheduleConfig = sqliteTable('schedule_config', {
   telegramChatId: text('telegram_chat_id').default(''),
   updatedAt: text('updated_at').notNull(),
 })
+
+// 内容草稿
+export const drafts = sqliteTable('drafts', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull().default(''),
+  platform: text('platform').notNull(), // 'xhs' | 'twitter' | 'article'
+  content: text('content').notNull().default(''),
+  status: text('status').notNull().default('draft'), // 'draft' | 'final' | 'exported'
+  aiPrompt: text('ai_prompt').default(''),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+})
+
+// 草稿素材关联
+export const draftSources = sqliteTable('draft_sources', {
+  id: text('id').primaryKey(),
+  draftId: text('draft_id').notNull().references(() => drafts.id, { onDelete: 'cascade' }),
+  digestItemId: text('digest_item_id').notNull().references(() => digestItems.id),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: text('created_at').notNull(),
+})
+
+// 分享卡片
+export const shareCards = sqliteTable('share_cards', {
+  id: text('id').primaryKey(),
+  draftId: text('draft_id').references(() => drafts.id),
+  digestItemId: text('digest_item_id').references(() => digestItems.id),
+  template: text('template').notNull().default('default'),
+  copyText: text('copy_text').notNull().default(''),
+  imagePath: text('image_path').default(''),
+  createdAt: text('created_at').notNull(),
+})
+
+// 用户行为事件
+export const userEvents = sqliteTable('user_events', {
+  id: text('id').primaryKey(),
+  eventType: text('event_type').notNull(), // 'read' | 'click' | 'favorite' | ...
+  targetType: text('target_type').notNull(), // 'digest_item' | 'draft' | ...
+  targetId: text('target_id').notNull(),
+  metadata: text('metadata', { mode: 'json' }),
+  createdAt: text('created_at').notNull(),
+})

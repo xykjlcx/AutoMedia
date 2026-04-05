@@ -34,6 +34,61 @@ sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_digest_items_source ON digest_items(
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_raw_items_date ON raw_items(digest_date)`)
 sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_ratings_item ON user_ratings(digest_item_id)`)
 
+// 内容创作相关表
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS drafts (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL DEFAULT '',
+    platform TEXT NOT NULL,
+    content TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'draft',
+    ai_prompt TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )
+`)
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS draft_sources (
+    id TEXT PRIMARY KEY,
+    draft_id TEXT NOT NULL REFERENCES drafts(id) ON DELETE CASCADE,
+    digest_item_id TEXT NOT NULL REFERENCES digest_items(id),
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL
+  )
+`)
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS share_cards (
+    id TEXT PRIMARY KEY,
+    draft_id TEXT REFERENCES drafts(id),
+    digest_item_id TEXT REFERENCES digest_items(id),
+    template TEXT NOT NULL DEFAULT 'default',
+    copy_text TEXT NOT NULL DEFAULT '',
+    image_path TEXT DEFAULT '',
+    created_at TEXT NOT NULL
+  )
+`)
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS user_events (
+    id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    metadata TEXT,
+    created_at TEXT NOT NULL
+  )
+`)
+
+// 内容创作相关索引
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_drafts_status ON drafts(status)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_drafts_platform ON drafts(platform)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_draft_sources_draft ON draft_sources(draft_id)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_share_cards_draft ON share_cards(draft_id)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_events_type ON user_events(event_type)`)
+sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_user_events_target ON user_events(target_type, target_id)`)
+
 export const db = drizzle(sqlite, { schema })
 
 import { seedDefaultSources, migrateRssSources } from './seed'
