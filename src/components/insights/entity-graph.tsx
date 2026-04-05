@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
+import { GraphDrawer } from "./graph-drawer"
 
 // ==================== Types ====================
 
@@ -369,6 +370,7 @@ export function EntityGraph() {
   const [sortBy, setSortBy] = useState<"heat" | "recent">("heat")
   const [showLongTail, setShowLongTail] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [graphOpen, setGraphOpen] = useState(false)
 
   // 拉取图谱数据
   useEffect(() => {
@@ -556,9 +558,9 @@ export function EntityGraph() {
         </div>
 
         <button
-          disabled
-          title="即将上线"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground border border-dashed border-border/60 cursor-not-allowed opacity-50"
+          onClick={() => setGraphOpen(true)}
+          disabled={!data || data.entities.length === 0}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-foreground border border-border/60 hover:bg-muted hover:border-[var(--color-warm-accent)]/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Network className="size-3.5" />
           查看图谱
@@ -679,6 +681,16 @@ export function EntityGraph() {
           />
         </div>
       </div>
+
+      {/* 知识图谱抽屉 */}
+      <GraphDrawer
+        open={graphOpen}
+        onClose={() => setGraphOpen(false)}
+        entities={data?.entities || []}
+        relations={data?.relations || []}
+        filterType={filterType}
+        initialSelectedId={selectedId}
+      />
     </div>
   )
 }
