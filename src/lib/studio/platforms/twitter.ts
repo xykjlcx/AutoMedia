@@ -9,17 +9,24 @@ export const twitterSchema = z.object({
 
 export type TwitterOutput = z.infer<typeof twitterSchema>
 
-export function buildTwitterPrompt(sources: Array<{ title: string; oneLiner: string; summary?: string; source: string }>) {
+export function buildTwitterPrompt(
+  sources: Array<{ title: string; oneLiner: string; summary?: string; source: string }>,
+  stylePrompt?: string | null,
+) {
   const sourceList = sources.map((s, i) =>
     `[${i + 1}] 来源:${s.source} | ${s.title}\n${s.oneLiner}${s.summary ? `\n${s.summary}` : ''}`
   ).join('\n\n')
+
+  const styleSection = stylePrompt
+    ? `\n用户写作风格参考（请遵循以下风格生成内容）：\n${stylePrompt}\n`
+    : ''
 
   return `你是一个 Twitter 内容创作者，面向关注 AI、跨境电商、技术变革的英文/中文受众。
 
 基于以下资讯素材，创作一个 Twitter Thread：
 
 ${sourceList}
-
+${styleSection}
 要求：
 - 第 1 条（Hook）：抓注意力，引起好奇
 - 中间条：每条一个要点，≤280 字

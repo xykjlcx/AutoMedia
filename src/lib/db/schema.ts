@@ -115,7 +115,17 @@ export const drafts = sqliteTable('drafts', {
   content: text('content').notNull().default(''),
   status: text('status').notNull().default('draft'), // 'draft' | 'final' | 'exported'
   aiPrompt: text('ai_prompt').default(''),
+  aiOriginal: text('ai_original').default(''), // AI 最近一次生成的原稿（用于风格学习 diff）
   createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+})
+
+// 写作风格画像（每个平台一条，id = platform）
+export const styleProfiles = sqliteTable('style_profiles', {
+  id: text('id').primaryKey(), // 'xhs' | 'twitter' | 'article'
+  platform: text('platform').notNull(),
+  profile: text('profile').notNull(), // AI 生成的风格描述（~200-300 字）
+  sampleCount: integer('sample_count').default(0), // 已分析的样本数量
   updatedAt: text('updated_at').notNull(),
 })
 

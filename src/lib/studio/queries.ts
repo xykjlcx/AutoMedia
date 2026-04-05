@@ -30,6 +30,7 @@ export interface UpdateDraftInput {
   platform?: string
   status?: string
   aiPrompt?: string
+  aiOriginal?: string
 }
 
 export function createDraft(input: CreateDraftInput) {

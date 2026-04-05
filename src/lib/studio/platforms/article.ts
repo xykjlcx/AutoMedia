@@ -9,17 +9,24 @@ export const articleSchema = z.object({
 
 export type ArticleOutput = z.infer<typeof articleSchema>
 
-export function buildArticlePrompt(sources: Array<{ title: string; oneLiner: string; summary?: string; source: string }>) {
+export function buildArticlePrompt(
+  sources: Array<{ title: string; oneLiner: string; summary?: string; source: string }>,
+  stylePrompt?: string | null,
+) {
   const sourceList = sources.map((s, i) =>
     `[${i + 1}] 来源:${s.source} | ${s.title}\n${s.oneLiner}${s.summary ? `\n${s.summary}` : ''}`
   ).join('\n\n')
+
+  const styleSection = stylePrompt
+    ? `\n用户写作风格参考（请遵循以下风格生成内容）：\n${stylePrompt}\n`
+    : ''
 
   return `你是一个公众号长文作者，面向关注 AI、跨境电商、技术变革的全栈开发者。
 
 基于以下资讯素材，创作一篇深度分析文章：
 
 ${sourceList}
-
+${styleSection}
 要求：
 - 标题：简洁有力，不超过 25 字
 - 摘要：一句话概括文章核心观点

@@ -9,17 +9,24 @@ export const xhsSchema = z.object({
 
 export type XhsOutput = z.infer<typeof xhsSchema>
 
-export function buildXhsPrompt(sources: Array<{ title: string; oneLiner: string; summary?: string; source: string }>) {
+export function buildXhsPrompt(
+  sources: Array<{ title: string; oneLiner: string; summary?: string; source: string }>,
+  stylePrompt?: string | null,
+) {
   const sourceList = sources.map((s, i) =>
     `[${i + 1}] 来源:${s.source} | ${s.title}\n${s.oneLiner}${s.summary ? `\n${s.summary}` : ''}`
   ).join('\n\n')
+
+  const styleSection = stylePrompt
+    ? `\n用户写作风格参考（请遵循以下风格生成内容）：\n${stylePrompt}\n`
+    : ''
 
   return `你是一个小红书内容创作者，面向关注 AI、跨境电商、技术变革的受众。
 
 基于以下资讯素材，创作一篇小红书帖子：
 
 ${sourceList}
-
+${styleSection}
 要求：
 - 标题：带 emoji，吸引眼球，20 字以内
 - 正文：分段短句，每段 2-3 行，总计 300-800 字

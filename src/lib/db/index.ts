@@ -43,7 +43,26 @@ sqlite.exec(`
     content TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'draft',
     ai_prompt TEXT DEFAULT '',
+    ai_original TEXT DEFAULT '',
     created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )
+`)
+
+// 为旧库幂等补齐 ai_original 列（SQLite 没有 ADD COLUMN IF NOT EXISTS）
+try {
+  sqlite.exec(`ALTER TABLE drafts ADD COLUMN ai_original TEXT DEFAULT ''`)
+} catch {
+  // 列已存在，忽略
+}
+
+// 写作风格画像（每个平台一条，id = platform）
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS style_profiles (
+    id TEXT PRIMARY KEY,
+    platform TEXT NOT NULL,
+    profile TEXT NOT NULL,
+    sample_count INTEGER DEFAULT 0,
     updated_at TEXT NOT NULL
   )
 `)
