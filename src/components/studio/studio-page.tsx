@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { DraftHistory } from './draft-history'
 import { DraftVersions } from './draft-versions'
 import { MarkdownPreview } from './markdown-preview'
+import { ImageGenerateDialog } from './image-generate-dialog'
 import { trackEvent } from '@/components/hooks/use-track-event'
 import type { Platform } from './platform-selector'
 
@@ -40,7 +41,16 @@ export function StudioPage() {
   const [generating, setGenerating] = useState(false)
   const [showCardPreview, setShowCardPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [showImageDialog, setShowImageDialog] = useState(false)
+  const [imageConfigured, setImageConfigured] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // 查询图片生成是否已配置（用于决定是否显示"配图"按钮）
+  useEffect(() => {
+    fetch('/api/studio/images/generate').then(r => r.json()).then(d => {
+      setImageConfigured(!!d.configured)
+    }).catch(() => setImageConfigured(false))
+  }, [])
 
   // 页面访问埋点（仅首次 mount）
   useEffect(() => {
@@ -282,6 +292,15 @@ export function StudioPage() {
                 <Image className="size-3.5" />
                 <span>分享卡片</span>
               </button>
+              {imageConfigured && (
+                <button
+                  onClick={() => setShowImageDialog(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  <Image className="size-3.5" />
+                  <span>配图</span>
+                </button>
+              )}
               <button
                 onClick={async () => {
                   const id = await saveDraft()
@@ -326,6 +345,12 @@ export function StudioPage() {
       )}
       {showExport && draft.id && (
         <ExportDialog draftId={draft.id} onClose={() => setShowExport(false)} />
+      )}
+      {showImageDialog && (
+        <ImageGenerateDialog
+          defaultPrompt={draft.title ? `生成一张符合文章主题的封面图：${draft.title}` : ''}
+          onClose={() => setShowImageDialog(false)}
+        />
       )}
     </div>
   )

@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle, Compass, RefreshCw, Eye, EyeOff, LucideIcon } from "lucide-react"
+import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle, Compass, RefreshCw, Eye, EyeOff, Image as ImageIcon, LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AiImageSettingsDialog } from "@/components/settings/ai-image-settings-dialog"
 
 // ── 设置页菜单类型 ──
 type SettingsSectionKey = 'model' | 'sources' | 'schedule'
@@ -749,6 +750,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showTestDialog, setShowTestDialog] = useState(false)
+  const [showImageSettings, setShowImageSettings] = useState(false)
 
   const [schedule, setSchedule] = useState<ScheduleData>({
     enabled: false,
@@ -1038,6 +1040,14 @@ export default function SettingsPage() {
                   测试连通性
                 </button>
 
+                <button
+                  onClick={() => setShowImageSettings(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border border-border/60 bg-background hover:bg-muted active:scale-[0.98]"
+                >
+                  <ImageIcon className="size-4" />
+                  图片生成配置
+                </button>
+
                 {saved && (
                   <span className="inline-flex items-center gap-1 text-sm text-green-600">
                     <Check className="size-4" />
@@ -1235,6 +1245,7 @@ export default function SettingsPage() {
 
       {/* 模型测试对话框（全局挂载，避免切换 section 时卸载） */}
       <ModelTestDialog open={showTestDialog} onClose={() => setShowTestDialog(false)} />
+      <AiImageSettingsDialog open={showImageSettings} onClose={() => setShowImageSettings(false)} />
     </div>
   )
 }
