@@ -33,6 +33,15 @@ export function getEnabledSources(): SourceConfig[] {
   return getAllSources().filter(s => s.enabled)
 }
 
+// 注：函数名保留 getPublicSources 以避免 call site 级联改动。
+// 语义实为"所有有 collector 可以采集的源"（含 twitter-public / twitter-private）
 export function getPublicSources(): SourceConfig[] {
-  return getAllSources().filter(s => (s.type === 'public' || s.type === 'custom-rss') && s.enabled)
+  return getAllSources().filter(s =>
+    s.enabled && (
+      s.type === 'public' ||
+      s.type === 'custom-rss' ||
+      s.type === 'twitter-public' ||
+      s.type === 'twitter-private'
+    )
+  )
 }

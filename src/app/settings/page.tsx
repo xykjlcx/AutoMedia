@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle, Compass, RefreshCw, Eye, EyeOff, Image as ImageIcon, LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AiImageSettingsDialog } from "@/components/settings/ai-image-settings-dialog"
+import { TwitterSourceAdder } from "@/components/settings/twitter-source-adder"
 
 // ── 设置页菜单类型 ──
 type SettingsSectionKey = 'model' | 'sources' | 'schedule'
@@ -280,6 +281,8 @@ const TYPE_LABELS: Record<string, { label: string; className: string }> = {
   public: { label: "公域", className: "bg-blue-50 text-blue-600 border border-blue-100" },
   private: { label: "私域", className: "bg-amber-50 text-amber-600 border border-amber-100" },
   "custom-rss": { label: "自定义", className: "bg-purple-50 text-purple-600 border border-purple-100" },
+  "twitter-public": { label: "Twitter 公开", className: "bg-sky-50 text-sky-600 border border-sky-100" },
+  "twitter-private": { label: "Twitter 时间线", className: "bg-sky-50 text-sky-700 border border-sky-200" },
 }
 
 const CATEGORY_LABELS: Record<string, { label: string; className: string }> = {
@@ -656,6 +659,11 @@ function SourcesSection() {
               )}
             </div>
           )}
+
+          {/* Twitter 快捷添加 */}
+          <div className="mt-3">
+            <TwitterSourceAdder onAdded={fetchSources} />
+          </div>
 
           {/* 添加自定义 RSS */}
           <div className="mt-3">

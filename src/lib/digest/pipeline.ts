@@ -3,7 +3,7 @@ import { db } from '../db/index'
 import { rawItems, digestRuns } from '../db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { getPublicSources, getEnabledSources } from '@/lib/sources'
-import { rssCollector } from './collectors/rss'
+import { pickCollector } from './collectors'
 import { scoreItems } from './scoring'
 import { clusterItems } from './clustering'
 import { summarizeItems } from './summarize'
@@ -115,9 +115,14 @@ export async function runDigestPipeline(date: string): Promise<string> {
     const collectResults = await Promise.allSettled(
       publicSources.map(async (source) => {
         const startTime = Date.now()
-        const items = await rssCollector.collect(source.id, {
+        const collector = pickCollector(source.type)
+        if (!collector) {
+          throw new Error(`未知的源类型: ${source.type}（source.id=${source.id}）`)
+        }
+        const items = await collector.collect(source.id, {
           rssPath: source.rssPath || '',
-          rssUrl: source.rssUrl || ''
+          rssUrl: source.rssUrl || '',
+          targetUrl: source.targetUrl || '',
         })
         const duration = (Date.now() - startTime) / 1000
         return { sourceId: source.id, items, duration }
