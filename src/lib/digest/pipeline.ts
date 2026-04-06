@@ -59,7 +59,7 @@ export async function isDigestRunning(date: string): Promise<boolean> {
   return runs.length > 0
 }
 
-export async function runDigestPipeline(date: string): Promise<string> {
+export async function runDigestPipeline(date: string, sourceIds?: string[]): Promise<string> {
   // 并发检查
   if (await isDigestRunning(date)) {
     throw new Error('当天日报正在生成中，请勿重复触发')
@@ -69,12 +69,22 @@ export async function runDigestPipeline(date: string): Promise<string> {
   const now = new Date().toISOString()
 
   // 初始化所有源为 pending（含私域源，标记为待实现）
-  const publicSources = getPublicSources()
+  // 如果指定了 sourceIds，只采集指定的源
+  const allPublicSources = getPublicSources()
+  const publicSources = sourceIds
+    ? allPublicSources.filter(s => sourceIds.includes(s.id))
+    : allPublicSources
   const allEnabledSources = getEnabledSources()
   const privateSources = allEnabledSources.filter(s => s.type === 'private')
   const sourcesProgress: Record<string, SourceProgress> = {}
+  const selectedIds = new Set(publicSources.map(s => s.id))
   for (const s of allEnabledSources) {
-    sourcesProgress[s.id] = { status: 'pending', name: s.name, icon: s.icon }
+    // 未选中的源标记为"已跳过"
+    if (sourceIds && !selectedIds.has(s.id) && s.type !== 'private') {
+      sourcesProgress[s.id] = { status: 'done', name: s.name, icon: s.icon, count: 0, error: '本次跳过' }
+    } else {
+      sourcesProgress[s.id] = { status: 'pending', name: s.name, icon: s.icon }
+    }
   }
 
   const progress: PipelineProgress = {

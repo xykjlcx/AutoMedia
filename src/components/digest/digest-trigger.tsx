@@ -1,17 +1,16 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
-import { RefreshCw, Loader2, CheckCircle2, AlertCircle, Check, Circle } from "lucide-react"
+import { RefreshCw, Loader2, CheckCircle2, AlertCircle, Check, Circle, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface DigestTriggerProps {
   date: string
   onComplete: () => void
-  /** 当前日报状态，如果已有日报则显示"重新生成" */
   hasExistingDigest?: boolean
 }
 
-type RunStatus = "none" | "collecting" | "processing" | "completed" | "failed"
+type RunStatus = "none" | "selecting" | "collecting" | "processing" | "completed" | "failed"
 
 // ── 结构化进度类型 ──
 
@@ -41,6 +40,16 @@ interface PipelineProgress {
   detail?: string
 }
 
+// ── 源配置类型 ──
+
+interface SourceItem {
+  id: string
+  name: string
+  icon: string
+  type: string
+  enabled: boolean
+}
+
 // ── 步骤条定义 ──
 
 const PHASES = [
@@ -50,8 +59,6 @@ const PHASES = [
   { key: "summarizing", label: "摘要" },
   { key: "completed", label: "完成" },
 ] as const
-
-type PhaseKey = typeof PHASES[number]["key"]
 
 function getPhaseIndex(phase?: string): number {
   return PHASES.findIndex(p => p.key === phase)
@@ -70,7 +77,6 @@ function StepBar({ currentPhase, timing }: { currentPhase?: string; timing?: Pip
 
         return (
           <div key={phase.key} className="flex items-center">
-            {/* 圆点 */}
             <div className="flex flex-col items-center gap-1">
               <div
                 className={cn(
@@ -98,7 +104,6 @@ function StepBar({ currentPhase, timing }: { currentPhase?: string; timing?: Pip
                 </span>
               )}
             </div>
-            {/* 连接线 */}
             {i < PHASES.length - 1 && (
               <div
                 className={cn(
@@ -114,7 +119,7 @@ function StepBar({ currentPhase, timing }: { currentPhase?: string; timing?: Pip
   )
 }
 
-// ── 源状态列表 ──
+// ── 源状态列表（运行时进度） ──
 
 function SourceList({ sources }: { sources: Record<string, SourceProgress> }) {
   const entries = Object.entries(sources)
@@ -125,7 +130,6 @@ function SourceList({ sources }: { sources: Record<string, SourceProgress> }) {
       {entries.map(([id, src]) => (
         <div key={id} className="flex items-center justify-between text-xs gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
-            {/* 状态图标 */}
             {src.status === "done" && (
               <CheckCircle2 className="size-3.5 text-green-600 shrink-0" />
             )}
@@ -138,7 +142,6 @@ function SourceList({ sources }: { sources: Record<string, SourceProgress> }) {
             {src.status === "pending" && (
               <Circle className="size-3.5 text-muted-foreground/40 shrink-0" />
             )}
-            {/* 源名称 */}
             <span
               className={cn(
                 "truncate",
@@ -151,9 +154,11 @@ function SourceList({ sources }: { sources: Record<string, SourceProgress> }) {
               {src.icon} {src.name}
             </span>
           </div>
-          {/* 右侧统计 */}
           <span className="text-muted-foreground/60 whitespace-nowrap shrink-0">
-            {src.status === "done" && (
+            {src.status === "done" && src.error === '本次跳过' && (
+              <span className="text-muted-foreground/40">跳过</span>
+            )}
+            {src.status === "done" && src.error !== '本次跳过' && (
               <>{src.count} 条{src.duration != null && <span className="ml-1">{src.duration.toFixed(1)}s</span>}</>
             )}
             {src.status === "running" && "采集中..."}
@@ -195,6 +200,53 @@ function AiProgress({ progress }: { progress: PipelineProgress }) {
   )
 }
 
+// ── 源选择面板 ──
+
+function SourceSelector({
+  sources,
+  selected,
+  onToggle,
+  onSelectAll,
+  onDeselectAll,
+}: {
+  sources: SourceItem[]
+  selected: Set<string>
+  onToggle: (id: string) => void
+  onSelectAll: () => void
+  onDeselectAll: () => void
+}) {
+  return (
+    <div className="w-full max-w-sm mx-auto">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-muted-foreground">选择要采集的源</span>
+        <div className="flex items-center gap-2">
+          <button onClick={onSelectAll} className="text-[10px] text-[var(--color-warm-accent)] hover:underline">全选</button>
+          <button onClick={onDeselectAll} className="text-[10px] text-muted-foreground hover:underline">全不选</button>
+        </div>
+      </div>
+      <div className="space-y-0.5 rounded-lg border border-border/60 bg-card p-2 max-h-[280px] overflow-y-auto">
+        {sources.map(src => (
+          <label
+            key={src.id}
+            className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={selected.has(src.id)}
+              onChange={() => onToggle(src.id)}
+              className="size-3.5 rounded border-border accent-[var(--color-warm-accent)]"
+            />
+            <span className="text-xs text-foreground">{src.icon} {src.name}</span>
+            <span className="text-[10px] text-muted-foreground/50 ml-auto">
+              {src.type === 'twitter-private' || src.type === 'xiaohongshu-private' ? '私域' : ''}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── 主组件 ──
 
 export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTriggerProps) {
@@ -208,7 +260,23 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
 
-  // mount 时检查是否有正在运行的 pipeline，有则自动连上 SSE
+  // 源选择
+  const [availableSources, setAvailableSources] = useState<SourceItem[]>([])
+  const [selectedSourceIds, setSelectedSourceIds] = useState<Set<string>>(new Set())
+
+  // 加载可用源列表
+  useEffect(() => {
+    fetch('/api/sources')
+      .then(r => r.json())
+      .then(d => {
+        const enabled = (d.sources || []).filter((s: SourceItem) => s.enabled)
+        setAvailableSources(enabled)
+        setSelectedSourceIds(new Set(enabled.map((s: SourceItem) => s.id)))
+      })
+      .catch(() => {})
+  }, [])
+
+  // mount 时检查是否有正在运行的 pipeline
   useEffect(() => {
     let cancelled = false
     fetch(`/api/digest/status?date=${date}`)
@@ -216,10 +284,8 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
       .then(data => {
         if (cancelled) return
         if (data.status === 'collecting' || data.status === 'processing') {
-          // 正在运行，恢复状态并连上 SSE
           setStatus(data.status)
           if (data.progress) setProgress(data.progress)
-          // 用后端的 startedAt 作为计时基准，避免 startTimeRef 为 0 导致天文数字
           if (data.startedAt) {
             startTimeRef.current = new Date(data.startedAt).getTime()
           } else {
@@ -279,9 +345,7 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
       }
     }
 
-    es.onerror = () => {
-      // SSE 自动重连，但如果已完成则关闭
-    }
+    es.onerror = () => {}
   }, [date, onComplete, stopSSE])
 
   const stopTimer = useCallback(() => {
@@ -301,7 +365,17 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
     }, 1000)
   }, [stopTimer])
 
-  const handleTrigger = async () => {
+  // 点击"生成日报"→ 展开源选择面板
+  const handleClickGenerate = () => {
+    setStatus("selecting")
+    setError(null)
+  }
+
+  // 点击"开始采集"→ 带 sourceIds 触发 pipeline
+  const handleStartCollecting = async () => {
+    const ids = Array.from(selectedSourceIds)
+    if (ids.length === 0) return
+
     setStatus("collecting")
     setProgress(null)
     setError(null)
@@ -311,13 +385,22 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
       await fetch("/api/digest/trigger", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date }),
+        body: JSON.stringify({ date, sourceIds: ids }),
       })
       startSSE()
     } catch {
       setStatus("failed")
       setError("请求失败，请检查网络")
     }
+  }
+
+  const toggleSource = (id: string) => {
+    setSelectedSourceIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   const isRunning = status === "collecting" || status === "processing"
@@ -330,49 +413,78 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
 
   return (
     <div className="flex flex-col items-center gap-4 py-4">
-      <button
-        onClick={handleTrigger}
-        disabled={isRunning}
-        className={cn(
-          "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
-          "border border-[var(--color-warm-accent)]/30",
-          isRunning
-            ? "bg-[var(--color-warm-accent)]/5 text-[var(--color-warm-accent)] cursor-wait"
-            : "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]"
-        )}
-      >
-        {isRunning ? (
-          <>
-            <Loader2 className="size-4 animate-spin" />
-            <span>生成中...</span>
-            <span className="text-xs opacity-60 tabular-nums">{formatTime(elapsed)}</span>
-          </>
-        ) : (
-          <>
-            <RefreshCw className="size-4" />
-            <span>{hasExistingDigest ? "重新生成日报" : "生成今日日报"}</span>
-          </>
-        )}
-      </button>
+      {/* 主按钮 */}
+      {status !== "selecting" && (
+        <button
+          onClick={handleClickGenerate}
+          disabled={isRunning}
+          className={cn(
+            "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
+            "border border-[var(--color-warm-accent)]/30",
+            isRunning
+              ? "bg-[var(--color-warm-accent)]/5 text-[var(--color-warm-accent)] cursor-wait"
+              : "bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]"
+          )}
+        >
+          {isRunning ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              <span>生成中...</span>
+              <span className="text-xs opacity-60 tabular-nums">{formatTime(elapsed)}</span>
+            </>
+          ) : (
+            <>
+              <RefreshCw className="size-4" />
+              <span>{hasExistingDigest ? "重新生成日报" : "生成今日日报"}</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {/* 源选择面板 */}
+      {status === "selecting" && (
+        <div className="w-full flex flex-col items-center gap-3">
+          <SourceSelector
+            sources={availableSources}
+            selected={selectedSourceIds}
+            onToggle={toggleSource}
+            onSelectAll={() => setSelectedSourceIds(new Set(availableSources.map(s => s.id)))}
+            onDeselectAll={() => setSelectedSourceIds(new Set())}
+          />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setStatus("none")}
+              className="px-4 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted transition-colors"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleStartCollecting}
+              disabled={selectedSourceIds.size === 0}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-[var(--color-warm-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <RefreshCw className="size-3.5" />
+              开始采集（{selectedSourceIds.size}/{availableSources.length} 个源）
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 步骤条 + 详细进度 */}
       {isRunning && progress && (
         <div className="w-full flex flex-col items-center gap-3">
           <StepBar currentPhase={progress.phase} timing={progress.timing} />
 
-          {/* 采集阶段：源列表 */}
           {progress.phase === "collecting" && progress.sources && (
             <SourceList sources={progress.sources} />
           )}
 
-          {/* AI 阶段：进度文字 */}
           {(progress.phase === "scoring" || progress.phase === "clustering" || progress.phase === "summarizing") && (
             <AiProgress progress={progress} />
           )}
         </div>
       )}
 
-      {/* 还没拿到 progress 时的 fallback */}
       {isRunning && !progress && (
         <p className="animate-gentle-pulse text-xs text-muted-foreground">
           正在初始化...
@@ -392,7 +504,6 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
         </div>
       )}
 
-      {/* 错误提示 */}
       {error && (
         <div className="flex items-center gap-1.5 text-sm text-destructive">
           <AlertCircle className="size-4" />
