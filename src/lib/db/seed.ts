@@ -66,6 +66,14 @@ export function migrateRssSources() {
     db.update(sourceConfigs).set({ type: 'xiaohongshu-private' })
       .where(eq(sourceConfigs.id, 'xiaohongshu'))
       .run()
+    // 禁用无 collector 的 wechat 源（type='private' 无对应 collector）
+    db.update(sourceConfigs).set({ enabled: false })
+      .where(eq(sourceConfigs.type, 'private'))
+      .run()
+    // 禁用已 404 的 Shopify Blog RSS
+    db.update(sourceConfigs).set({ enabled: false })
+      .where(eq(sourceConfigs.rssUrl, 'https://www.shopify.com/blog/feed'))
+      .run()
   } catch {
     // 静默失败
   }

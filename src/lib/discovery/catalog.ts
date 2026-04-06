@@ -155,11 +155,11 @@ export const RSS_CATALOG: CatalogEntry[] = [
 
   // ── 跨境电商 ──
   {
-    name: 'Shopify Blog',
-    description: 'Shopify 官方博客，电商运营、DTC 品牌、商业洞察',
-    rssUrl: 'https://www.shopify.com/blog/feed',
+    name: 'Shopify Engineering',
+    description: 'Shopify 工程博客，技术架构、性能优化、电商基础设施',
+    rssUrl: 'https://shopify.engineering/blog.atom',
     category: 'ecommerce',
-    tags: ['电商', 'shopify', '运营'],
+    tags: ['电商', 'shopify', '工程'],
   },
   {
     name: 'BigCommerce Blog',
