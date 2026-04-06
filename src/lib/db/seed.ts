@@ -9,7 +9,7 @@ const DEFAULT_SOURCES = [
   { id: 'sspai', name: '少数派', icon: '📱', type: 'public' as const, rssPath: '/sspai/index', sortOrder: 3 },
   { id: 'hackernews', name: 'Hacker News', icon: '📰', type: 'public' as const, rssPath: '/hackernews/best', sortOrder: 4 },
   { id: 'twitter', name: 'Twitter 时间线', icon: '🐦', type: 'twitter-private' as const, targetUrl: 'https://x.com/home', enabled: false, sortOrder: 5 },
-  { id: 'xiaohongshu', name: '小红书', icon: '📕', type: 'private' as const, targetUrl: 'https://www.xiaohongshu.com/explore', enabled: false, sortOrder: 6 },
+  { id: 'xiaohongshu', name: '小红书', icon: '📕', type: 'xiaohongshu-private' as const, targetUrl: 'https://www.xiaohongshu.com/explore', enabled: false, sortOrder: 6 },
   { id: 'wechat', name: '公众号', icon: '📖', type: 'private' as const, targetUrl: 'https://mp.weixin.qq.com', enabled: false, sortOrder: 7 },
 ]
 
@@ -61,6 +61,10 @@ export function migrateRssSources() {
     // Twitter legacy 'private' 类型升级到 'twitter-private'（幂等）
     db.update(sourceConfigs).set({ type: 'twitter-private' })
       .where(eq(sourceConfigs.id, 'twitter'))
+      .run()
+    // 小红书 legacy 'private' 类型升级到 'xiaohongshu-private'（幂等）
+    db.update(sourceConfigs).set({ type: 'xiaohongshu-private' })
+      .where(eq(sourceConfigs.id, 'xiaohongshu'))
       .run()
   } catch {
     // 静默失败

@@ -41,7 +41,8 @@ export function getPublicSources(): SourceConfig[] {
       s.type === 'public' ||
       s.type === 'custom-rss' ||
       s.type === 'twitter-public' ||
-      s.type === 'twitter-private'
+      s.type === 'twitter-private' ||
+      s.type === 'xiaohongshu-private'
     )
   )
 }
