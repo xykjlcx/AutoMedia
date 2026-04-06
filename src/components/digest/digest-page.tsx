@@ -311,6 +311,7 @@ export function DigestPage() {
                     selectable={selectMode}
                     selected={selectedItems.has(item.id)}
                     onSelect={toggleSelect}
+                    sourceMeta={SOURCE_META}
                   />
                 ))}
               </div>

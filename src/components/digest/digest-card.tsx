@@ -36,14 +36,15 @@ interface DigestCardProps {
   selectable?: boolean
   selected?: boolean
   onSelect?: (id: string) => void
+  sourceMeta?: Record<string, { icon: string; name: string }>
 }
 
-export function DigestCard({ item, index = 0, selectable, selected, onSelect }: DigestCardProps) {
+export function DigestCard({ item, index = 0, selectable, selected, onSelect, sourceMeta: externalMeta }: DigestCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [isRead, setIsRead] = useState(item.isRead ?? false)
   const [compareOpen, setCompareOpen] = useState(false)
   const sourceColor = SOURCE_COLORS[item.source] || "#9C9590"
-  const sourceMeta = SOURCE_META[item.source]
+  const sourceMeta = externalMeta?.[item.source] ?? SOURCE_META[item.source]
 
   // 跨源讨论标签文案
   const crossSourceLabel = item.clusterSources && item.clusterSources.length > 0
