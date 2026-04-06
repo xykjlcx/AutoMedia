@@ -14,10 +14,19 @@ export const rssCollector: Collector = {
     if (!feedUrl) throw new Error(`RSS path not configured for source: ${sourceId}`)
 
     // 用 fetch 获取 XML（避免 rss-parser 内置 http 模块的 DNS/IPv6 兼容问题）
-    const response = await fetch(feedUrl, {
+    // 5xx 或网络错误时重试 1 次，间隔 2s（知乎等 RSSHub 实例偶发 503）
+    const fetchOpts: RequestInit = {
       headers: { 'User-Agent': 'AutoMedia/1.0' },
       signal: AbortSignal.timeout(30000),
-    })
+    }
+    let response: Response
+    try {
+      response = await fetch(feedUrl, fetchOpts)
+      if (response.status >= 500) throw new Error(`HTTP ${response.status}`)
+    } catch {
+      await new Promise(r => setTimeout(r, 2000))
+      response = await fetch(feedUrl, { ...fetchOpts, signal: AbortSignal.timeout(30000) })
+    }
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${feedUrl}`)
     const xml = await response.text()
     const feed = await parser.parseString(xml)
