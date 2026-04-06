@@ -22,7 +22,7 @@ const EXTRACT_SCRIPT = `
       const linkEl = item.querySelector('a[href*="/explore/"]') || item.querySelector('a.cover');
       if (!titleEl || !linkEl) continue;
       const href = linkEl.getAttribute('href') || '';
-      const url = href.startsWith('http') ? href : 'https://www.xiaohongshu.com' + href.split('?')[0];
+      const url = href.startsWith('http') ? href : 'https://www.xiaohongshu.com' + href;
       notes.push({
         title: (titleEl.textContent || '').trim(),
         author: authorEl ? (authorEl.textContent || '').trim() : '',
