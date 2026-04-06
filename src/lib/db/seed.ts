@@ -30,7 +30,7 @@ export function seedDefaultSources() {
       rssUrl: '',
       targetUrl: s.targetUrl || '',
       enabled: s.enabled !== false,
-      maxItems: 5,
+      maxItems: 20,
       createdAt: now,
     }).onConflictDoNothing().run()
   }
@@ -51,7 +51,7 @@ export function migrateRssSources() {
         rssUrl: '',
         targetUrl: '',
         enabled: true,
-        maxItems: 5,
+        maxItems: 20,
         createdAt: now,
       }).onConflictDoNothing().run()
     }
