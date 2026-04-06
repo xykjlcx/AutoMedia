@@ -11,7 +11,7 @@ import { TldrCard } from "./tldr-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-import { SOURCE_COLORS, SOURCE_META } from "@/lib/constants"
+import { SOURCE_COLORS, SOURCE_META as STATIC_SOURCE_META } from "@/lib/constants"
 import { useReadingPosition } from "@/components/hooks/use-reading-position"
 import { trackEvent } from "@/components/hooks/use-track-event"
 import type { DigestItem } from "@/components/digest/digest-card"
@@ -41,6 +41,23 @@ export function DigestPage() {
   // 多选模式
   const [selectMode, setSelectMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+
+  // 动态源名称映射（覆盖静态 SOURCE_META，支持自定义 RSS 源显示真实名称）
+  const [SOURCE_META, setSourceMeta] = useState(STATIC_SOURCE_META)
+  useEffect(() => {
+    fetch('/api/sources')
+      .then(r => r.json())
+      .then(d => {
+        const merged = { ...STATIC_SOURCE_META }
+        for (const s of d.sources || []) {
+          if (!merged[s.id]) {
+            merged[s.id] = { icon: s.icon || '📰', name: s.name }
+          }
+        }
+        setSourceMeta(merged)
+      })
+      .catch(() => {})
+  }, [])
 
   const fetchDigest = useCallback(async (date: string) => {
     setLoading(true)

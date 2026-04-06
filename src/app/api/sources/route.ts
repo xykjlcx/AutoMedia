@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       rssPath: '',
       targetUrl: '',
       enabled: true,
-      maxItems: 5,
+      maxItems: 20,
       sortOrder: maxSort,
       createdAt: new Date().toISOString(),
     })

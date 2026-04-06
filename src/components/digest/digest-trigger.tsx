@@ -219,6 +219,12 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
           // 正在运行，恢复状态并连上 SSE
           setStatus(data.status)
           if (data.progress) setProgress(data.progress)
+          // 用后端的 startedAt 作为计时基准，避免 startTimeRef 为 0 导致天文数字
+          if (data.startedAt) {
+            startTimeRef.current = new Date(data.startedAt).getTime()
+          } else {
+            startTimeRef.current = Date.now()
+          }
           startSSE()
         }
       })
@@ -378,8 +384,10 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
         <div className="flex items-center gap-1.5 text-sm text-green-600">
           <CheckCircle2 className="size-4" />
           <span>{progress?.detail || "生成完成"}</span>
-          {finalElapsed != null && (
-            <span className="text-xs text-muted-foreground">（耗时 {formatTime(finalElapsed)}）</span>
+          {(progress?.timing?.total != null || finalElapsed != null) && (
+            <span className="text-xs text-muted-foreground">
+              （耗时 {formatTime(progress?.timing?.total ?? finalElapsed ?? 0)}）
+            </span>
           )}
         </div>
       )}
