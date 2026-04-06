@@ -19,7 +19,7 @@ const EXTRACT_SCRIPT = `
     try {
       const titleEl = item.querySelector('a.title span') || item.querySelector('.title span');
       const authorEl = item.querySelector('span.name') || item.querySelector('.author-wrapper .name');
-      const linkEl = item.querySelector('a[href*="/explore/"]') || item.querySelector('a.cover');
+      const linkEl = item.querySelector('a.cover[href*="/explore/"]') || item.querySelector('a.cover');
       if (!titleEl || !linkEl) continue;
       const href = linkEl.getAttribute('href') || '';
       const url = href.startsWith('http') ? href : 'https://www.xiaohongshu.com' + href;
