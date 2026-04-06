@@ -22,7 +22,9 @@ export const rssCollector: Collector = {
     const xml = await response.text()
     const feed = await parser.parseString(xml)
 
-    return (feed.items || []).map(item => ({
+    // 每源上限 30 条，避免某些 RSS feed 返回全部历史文章（如 OpenAI Blog 903 条）
+    const maxItems = Number(config.maxItems) || 30
+    return (feed.items || []).slice(0, maxItems).map(item => ({
       source: sourceId,
       sourceType: 'public' as const,
       title: item.title?.trim() || '',

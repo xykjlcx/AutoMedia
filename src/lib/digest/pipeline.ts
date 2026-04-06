@@ -123,6 +123,7 @@ export async function runDigestPipeline(date: string): Promise<string> {
           rssPath: source.rssPath || '',
           rssUrl: source.rssUrl || '',
           targetUrl: source.targetUrl || '',
+          maxItems: String(source.maxItems || 30),
         })
         const duration = (Date.now() - startTime) / 1000
         return { sourceId: source.id, items, duration }
