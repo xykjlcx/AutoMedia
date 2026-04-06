@@ -7,7 +7,7 @@ import { DraftEditor } from './draft-editor'
 import { PlatformSelector } from './platform-selector'
 import { CardPreview } from './card-preview'
 import { ExportDialog } from './export-dialog'
-import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Download, Loader2, History, RotateCcw } from 'lucide-react'
+import { PanelLeftOpen, PanelLeftClose, Eye, EyeOff, Sparkles, Copy, Image, Download, Loader2, History, RotateCcw, FilePlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DraftHistory } from './draft-history'
 import { DraftVersions } from './draft-versions'
@@ -220,6 +220,13 @@ export function StudioPage() {
               >
                 <History className="size-4" />
               </button>
+              <button
+                onClick={newDraft}
+                className="p-1.5 rounded-md transition-colors hover:bg-muted text-muted-foreground"
+                title="新建空白草稿"
+              >
+                <FilePlus className="size-4" />
+              </button>
               {draft.id && (
                 <button
                   onClick={() => setVersionsOpen(!versionsOpen)}
@@ -317,11 +324,11 @@ export function StudioPage() {
 
             <button
               onClick={handleGenerate}
-              disabled={generating || draft.sourceIds.length === 0}
+              disabled={generating || (draft.sourceIds.length === 0 && !draft.content.trim())}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[var(--color-warm-accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {generating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-              <span>{generating ? '生成中...' : 'AI 生成'}</span>
+              <span>{generating ? '生成中...' : draft.sourceIds.length > 0 ? 'AI 生成' : 'AI 润色'}</span>
             </button>
           </div>
         </div>
