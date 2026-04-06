@@ -283,6 +283,7 @@ const TYPE_LABELS: Record<string, { label: string; className: string }> = {
   "custom-rss": { label: "自定义", className: "bg-purple-50 text-purple-600 border border-purple-100" },
   "twitter-public": { label: "Twitter 公开", className: "bg-sky-50 text-sky-600 border border-sky-100" },
   "twitter-private": { label: "Twitter 时间线", className: "bg-sky-50 text-sky-700 border border-sky-200" },
+  "xiaohongshu-private": { label: "小红书", className: "bg-red-50 text-red-600 border border-red-100" },
 }
 
 const CATEGORY_LABELS: Record<string, { label: string; className: string }> = {
@@ -613,7 +614,7 @@ function SourcesSection() {
                     <input
                       type="number"
                       min={1}
-                      max={10}
+                      max={100}
                       value={source.maxItems}
                       onChange={e => handleMaxItemsChange(source.id, Number(e.target.value))}
                       className="w-12 px-1.5 py-1 rounded border border-border/60 bg-background text-xs text-center focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)]"
