@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 import { Settings, Check, AlertCircle, Key, Server, Cpu, Zap, Sparkles, Rss, Plus, Trash2, ChevronDown, ChevronUp, Clock, Bell, Send, FlaskConical, X, Loader2, CheckCircle2, XCircle, Compass, RefreshCw, Eye, EyeOff, Image as ImageIcon, LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AiImageSettingsDialog } from "@/components/settings/ai-image-settings-dialog"
+
 import { TwitterSourceAdder } from "@/components/settings/twitter-source-adder"
 
 // ── 设置页菜单类型 ──
-type SettingsSectionKey = 'model' | 'sources' | 'schedule'
+type SettingsSectionKey = 'model' | 'image' | 'sources' | 'schedule'
 
 interface MenuItem {
   key: SettingsSectionKey
@@ -17,6 +17,7 @@ interface MenuItem {
 
 const MENU_ITEMS: MenuItem[] = [
   { key: 'model', label: '模型设置', icon: Cpu },
+  { key: 'image', label: '图片生成', icon: ImageIcon },
   { key: 'sources', label: '信息源', icon: Rss },
   { key: 'schedule', label: '定时任务', icon: Clock },
 ]
@@ -471,6 +472,162 @@ function DiscoveryPanel() {
   )
 }
 
+// 图片生成 Section
+function ImageSection() {
+  const [data, setData] = useState<{ provider: '' | 'google' | 'openai'; baseUrl: string; apiKey: string; model: string }>({ provider: '', baseUrl: '', apiKey: '', model: '' })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/settings/ai-image')
+      .then(r => r.json())
+      .then(d => setData({ provider: d.provider || '', baseUrl: d.baseUrl || '', apiKey: d.apiKey || '', model: d.model || '' }))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/settings/ai-image', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error || '保存失败')
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '保存失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const modelPlaceholder = data.provider === 'google' ? 'gemini-2.5-flash-image-preview' : data.provider === 'openai' ? 'gpt-image-1' : '选择 Provider 后填入'
+
+  if (loading) {
+    return <div className="py-8 text-center"><Loader2 className="size-5 animate-spin mx-auto text-muted-foreground mb-2" /><p className="text-sm text-muted-foreground">加载中...</p></div>
+  }
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="font-serif-display text-xl font-semibold text-foreground">图片生成</h2>
+        <p className="text-sm text-muted-foreground mt-1">配置 Studio 配图功能的 Provider 和参数</p>
+      </div>
+
+      {/* Provider */}
+      <section>
+        <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
+          <ImageIcon className="size-4" />
+          Provider
+        </h2>
+        <div className="grid grid-cols-3 gap-3">
+          {(['', 'google', 'openai'] as const).map(p => (
+            <button
+              key={p || 'none'}
+              onClick={() => setData(prev => ({ ...prev, provider: p }))}
+              className={cn(
+                'px-3 py-2.5 rounded-lg border text-sm font-medium transition-all',
+                data.provider === p
+                  ? 'border-[var(--color-warm-accent)] bg-[var(--color-warm-accent)]/5 text-[var(--color-warm-accent)]'
+                  : 'border-border/60 text-muted-foreground hover:border-border hover:bg-muted/50'
+              )}
+            >
+              {p === '' ? '未配置' : p === 'google' ? 'Google Gemini' : 'OpenAI 兼容'}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Base URL（仅 OpenAI 兼容时显示） */}
+      {data.provider === 'openai' && (
+        <section>
+          <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
+            <Server className="size-4" />
+            Base URL
+          </h2>
+          <input
+            type="url"
+            value={data.baseUrl}
+            onChange={e => setData(prev => ({ ...prev, baseUrl: e.target.value }))}
+            placeholder="https://api.openai.com"
+            className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+          />
+          <p className="text-xs text-muted-foreground mt-1.5">会自动拼接 /v1/images/generations</p>
+        </section>
+      )}
+
+      {/* API Key */}
+      <section>
+        <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
+          <Key className="size-4" />
+          API Key
+        </h2>
+        <input
+          type="password"
+          value={data.apiKey}
+          onChange={e => setData(prev => ({ ...prev, apiKey: e.target.value }))}
+          placeholder={data.apiKey.includes('***') ? data.apiKey : 'sk-...'}
+          className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+        />
+        {data.apiKey.includes('***') && (
+          <p className="text-xs text-muted-foreground mt-1.5">已保存，留空则不修改</p>
+        )}
+      </section>
+
+      {/* Model */}
+      <section>
+        <h2 className="flex items-center gap-2 font-serif-display text-base font-semibold text-foreground mb-3">
+          <Cpu className="size-4" />
+          模型名称
+        </h2>
+        <input
+          type="text"
+          value={data.model}
+          onChange={e => setData(prev => ({ ...prev, model: e.target.value }))}
+          placeholder={modelPlaceholder}
+          className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+        />
+      </section>
+
+      {/* 保存 */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className={cn(
+            'inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all',
+            'bg-[var(--color-warm-accent)] text-white hover:bg-[var(--color-warm-accent-hover)] active:scale-[0.98]',
+            saving && 'opacity-60 cursor-wait'
+          )}
+        >
+          {saving ? '保存中...' : '保存设置'}
+        </button>
+        {saved && (
+          <span className="inline-flex items-center gap-1 text-sm text-green-600">
+            <Check className="size-4" />
+            已保存
+          </span>
+        )}
+        {error && (
+          <span className="inline-flex items-center gap-1 text-sm text-destructive">
+            <AlertCircle className="size-4" />
+            {error}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // 信息源管理 Section（带 Tab 切换）
 function SourcesSection() {
   const [activeTab, setActiveTab] = useState<"sources" | "discovery">("sources")
@@ -480,6 +637,12 @@ function SourcesSection() {
   const [newSource, setNewSource] = useState({ name: "", rssUrl: "", icon: "📰" })
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [savedId, setSavedId] = useState<string | null>(null)
+
+  const showSaved = (id: string) => {
+    setSavedId(id)
+    setTimeout(() => setSavedId(null), 1500)
+  }
 
   const fetchSources = () => {
     fetch("/api/sources")
@@ -494,13 +657,13 @@ function SourcesSection() {
   useEffect(() => { fetchSources() }, [])
 
   const handleToggle = async (id: string, enabled: boolean) => {
-    // 乐观更新
     setSources(prev => prev.map(s => s.id === id ? { ...s, enabled } : s))
     await fetch(`/api/sources/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled }),
     })
+    showSaved(id)
   }
 
   const handleMaxItemsChange = async (id: string, maxItems: number) => {
@@ -510,6 +673,7 @@ function SourcesSection() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ maxItems }),
     })
+    showSaved(id)
   }
 
   const handleDelete = async (id: string, name: string) => {
@@ -607,6 +771,13 @@ function SourcesSection() {
                       )}
                     </div>
                   </div>
+
+                  {/* 已保存反馈 */}
+                  {savedId === source.id && (
+                    <span className="text-xs text-green-600 shrink-0 animate-in fade-in">
+                      <Check className="size-3.5" />
+                    </span>
+                  )}
 
                   {/* 每源数量 */}
                   <div className="flex items-center gap-1 shrink-0">
@@ -759,7 +930,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showTestDialog, setShowTestDialog] = useState(false)
-  const [showImageSettings, setShowImageSettings] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   const [schedule, setSchedule] = useState<ScheduleData>({
     enabled: false,
@@ -937,8 +1108,7 @@ export default function SettingsPage() {
                   className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  填写 API 服务地址。Anthropic 协议会在末尾自动拼接 /messages，OpenAI 协议会拼接 /chat/completions。
-                  例：MiniMax Anthropic 填 https://api.minimaxi.com/anthropic/v1，OpenAI 填 https://api.minimaxi.com/v1
+                  Anthropic 协议自动拼接 /messages，OpenAI 协议拼接 /chat/completions
                 </p>
               </section>
 
@@ -953,13 +1123,23 @@ export default function SettingsPage() {
                     已检测到环境变量中的 API Key，下方留空将使用环境变量
                   </p>
                 )}
-                <input
-                  type="password"
-                  value={settings.apiKey}
-                  onChange={e => { setSettings(prev => ({ ...prev, apiKey: e.target.value })); setSaved(false) }}
-                  placeholder="sk-..."
-                  className="w-full px-3 py-2 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showApiKey ? "text" : "password"}
+                    value={settings.apiKey}
+                    onChange={e => { setSettings(prev => ({ ...prev, apiKey: e.target.value })); setSaved(false) }}
+                    placeholder="sk-..."
+                    className="w-full px-3 py-2 pr-10 rounded-lg border border-border/60 bg-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-warm-accent)]/30 focus:border-[var(--color-warm-accent)] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(prev => !prev)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showApiKey ? "隐藏" : "显示"}
+                  >
+                    {showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </section>
 
               {/* API 协议 */}
@@ -1049,14 +1229,6 @@ export default function SettingsPage() {
                   测试连通性
                 </button>
 
-                <button
-                  onClick={() => setShowImageSettings(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border border-border/60 bg-background hover:bg-muted active:scale-[0.98]"
-                >
-                  <ImageIcon className="size-4" />
-                  图片生成配置
-                </button>
-
                 {saved && (
                   <span className="inline-flex items-center gap-1 text-sm text-green-600">
                     <Check className="size-4" />
@@ -1073,6 +1245,9 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+
+          {/* ─── 图片生成 ─── */}
+          {activeSection === 'image' && <ImageSection />}
 
           {/* ─── 信息源 ─── */}
           {activeSection === 'sources' && <SourcesSection />}
@@ -1254,7 +1429,6 @@ export default function SettingsPage() {
 
       {/* 模型测试对话框（全局挂载，避免切换 section 时卸载） */}
       <ModelTestDialog open={showTestDialog} onClose={() => setShowTestDialog(false)} />
-      <AiImageSettingsDialog open={showImageSettings} onClose={() => setShowImageSettings(false)} />
     </div>
   )
 }
