@@ -286,11 +286,13 @@ export function DigestTrigger({ date, onComplete, hasExistingDigest }: DigestTri
         if (data.status === 'collecting' || data.status === 'processing') {
           setStatus(data.status)
           if (data.progress) setProgress(data.progress)
-          if (data.startedAt) {
-            startTimeRef.current = new Date(data.startedAt).getTime()
-          } else {
-            startTimeRef.current = Date.now()
-          }
+          // 用后端 startedAt 做计时基准，并启动前端 interval
+          const baseTime = data.startedAt ? new Date(data.startedAt).getTime() : Date.now()
+          startTimeRef.current = baseTime
+          setElapsed(Math.floor((Date.now() - baseTime) / 1000))
+          timerRef.current = setInterval(() => {
+            setElapsed(Math.floor((Date.now() - baseTime) / 1000))
+          }, 1000)
           startSSE()
         }
       })
